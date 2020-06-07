@@ -23,10 +23,9 @@ def parametrized(dec):
 
 
 @parametrized
-def publicmethod(func, cls):
+def method(func, cls):
     setattr(cls, func.__name__, func)
     def inner(*args, **kwargs):
         return func(*args, **kwargs)
     return inner
 
-privatemethod = publicmethod

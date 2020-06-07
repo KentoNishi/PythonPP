@@ -8,21 +8,21 @@ class test(objpp):
     def namespace(public, private):
         private.h1 = "hello"
 
-        @privatemethod(private)
+        @method(private)
         def privateAlgo(ipt):
             return ipt.capitalize()
 
-        @publicmethod(public)
+        @method(public)
         def get1(key):
             if key == "yee":
                 return private.privateAlgo(private.h1)
             return "screw you"
 
-        @publicmethod(public)
+        @method(public)
         def get2():
             return ["hidden_2"]
 
-        @publicmethod(public)
+        @method(public)
         def set1(new1):
             private.h1 = new1
 
