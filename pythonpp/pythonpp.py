@@ -6,7 +6,7 @@ class PrivateScope:
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
     
-class ObjPP:
+class ClsPP:
     def __init__(self):
         self.namespace(PrivateScope())
 

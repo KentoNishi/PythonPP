@@ -1,3 +1,4 @@
 *.un*
 *~
 __pycache__/
+.vscode/

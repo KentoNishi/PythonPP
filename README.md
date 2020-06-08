@@ -22,8 +22,8 @@ pip install --upgrade --no-cache-dir pythonpp
 
 ## Usage
 
-**A PythonPP class must extend PythonPP's `ObjPP` class.**
-**The constructor must also call the `__init__` method of the parent `ObjPP` class.**
+**A PythonPP class must extend PythonPP's `ClsPP` class.**
+**The constructor must also call the `__init__` method of the parent `ClsPP` class.**
 
 > When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
 
@@ -32,11 +32,11 @@ Example:
 ```python
 from pythonpp import *
 
-# Class extends pythonpp's ObjPP class.
-class Test(ObjPP):
+# Class extends pythonpp's ClsPP class.
+class Test(ClsPP):
     # Class constructor
     def __init__(self):
-        # Call ObjPP's constructor.
+        # Call ClsPP's constructor.
         super().__init__()
     
     def namespace(public, private):
@@ -50,7 +50,7 @@ Alternatively, you can create your class without using a wildcard import.
 ```python
 import pythonpp as ppp
 
-class Test(ppp.ObjPP):
+class Test(ppp.ClsPP):
     def __init__(self):
         super().__init__()
         
@@ -120,9 +120,9 @@ test.privateMethod()
 
 ## Inheritance
 
-All Python++ classes must extend the `ObjPP` class. You can also create Python++ classes that extend other classes using multiple inheritance.
+All Python++ classes must extend the `ClsPP` class. You can also create Python++ classes that extend other classes using multiple inheritance.
 
-> For Python++ to work properly, you must call `ObjPP`'s constructor at some point in the `__init__` method.
+> For Python++ to work properly, you must call `ClsPP`'s constructor at some point in the `__init__` method.
 
 Example:
 ```python
@@ -133,11 +133,11 @@ class Parent():
         print("Parent constructor")
 
 # child class
-class Child(ObjPP, Parent):
+class Child(ClsPP, Parent):
     # Child constructor
     def __init__(self):
         print("Child constructor")
-        super(ObjPP, self).__init__()
+        super(ClsPP, self).__init__()
         super(Parent, self).__init__()
 
     def namespace(public, private):
@@ -148,10 +148,10 @@ Alternatively, you can call the superclass constructors like so:
 
 ```python
 # child class
-class Child(ObjPP, Parent):
+class Child(ClsPP, Parent):
     def __init__(self):
-        # Same as super(ObjPP, self).__init__()
-        ObjPP.__init__(self)
+        # Same as super(ClsPP, self).__init__()
+        ClsPP.__init__(self)
         # Same as super(Parent, self).__init__()
         Parent.__init__(self)
 
@@ -165,10 +165,10 @@ View the full Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob
 ```python
 from pythonpp import *
 
-class Test(ObjPP):
+class Test(ClsPP):
     # Class constructor
     def __init__(self):
-        # Call ObjPP's constructor.
+        # Call ClsPP's constructor.
         super().__init__()
 
     # Place all methods and field declerations here.
