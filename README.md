@@ -16,7 +16,9 @@ pip install pythonpp
 A detailed example of a class utilizing PythonPP is available in
 [this Jupyter notebook](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
 
-A PythonPP object must extend PythonPP's `objpp` class. The constructor must also call the `__init__` method of the parent `objpp` class.
+**A PythonPP object must extend PythonPP's `objpp` class.**
+**The constructor must also call the `__init__` method of the parent `objpp` class.**
+When no ``__init`` method is defined, `super().__init__()` will be executed automatically.
 
 
 Example:
@@ -32,6 +34,18 @@ class Test(objpp):
     def namespace(public, private):
         # public: the public scope.
         # private: the private scope.
+        pass
+```
+
+Alternatively, you can create your class without using a wildcard import.
+
+```python
+import pythonpp as ppp
+
+class Test(ppp.objpp):
+    def __init__(self):
+        super().__init__()
+    def namespace(public, private):
         pass
 ```
 
@@ -72,8 +86,9 @@ def privateMethod():
     print("Called privateMethod")
 ```
 
-Public variables and methods can be accessed as usual:
+Public variables and methods can be accessed as usual.
 
+Example:
 ```python
 test = Test()
 # works as normal
@@ -84,6 +99,7 @@ test.publicMethod()
 
 However, private variables and methods **cannot be accessed** externally.
 
+Example:
 ```python
 test = Test()
 # results in an error
