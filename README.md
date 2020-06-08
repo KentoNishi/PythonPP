@@ -22,7 +22,7 @@ pip install pythonpp
 
 ## Usage
 
-**A PythonPP object must extend PythonPP's `objpp` class.**
+**A PythonPP class must extend PythonPP's `objpp` class.**
 **The constructor must also call the `__init__` method of the parent `objpp` class.**
 
 > When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
@@ -38,6 +38,7 @@ class Test(objpp):
     def __init__(self):
         # Call objpp's constructor.
         super().__init__()
+    
     def namespace(public, private):
         # public: the public scope.
         # private: the private scope.
@@ -52,6 +53,7 @@ import pythonpp as ppp
 class Test(ppp.objpp):
     def __init__(self):
         super().__init__()
+        
     def namespace(public, private):
         pass
 ```
