@@ -74,7 +74,9 @@ class Test(ppp.ClsPP):
 You can define public and private variables using these scopes.
 
 **All variables and methods are declared private by default when the scope is not specified.**
-**When you create a variable or method, it is highly recommended that you declare it private unless <u>absolutely necessary</u>.**
+**When you create a variable or method, it is highly recommended that you declare it private unless *absolutely necessary*.**
+
+You can declare public and private variables by directly accessing the desired scope.
 
 Example:
 ```python
@@ -140,13 +142,6 @@ class Test(ClsPP):
         @method(private)
         def privateMethod():
             print("Called privateMethod")
-
-        # public method to call the private method.
-        @method(public)
-        def callPrivateMethod():
-            print("Calling privateMethod()")
-            # Call the private method
-            private.privateMethod()
 ```
 ```python
 test = Test()
@@ -168,13 +163,13 @@ test.privateMethod()
 
 All Python++ classes must extend the `ClsPP` class. You can also create Python++ classes that extend other classes using multiple inheritance.
 
-For Python++ to work properly, you must call `ClsPP`'s constructor at some point in the `__init__` method.
+**For Python++ to work properly, you must call `ClsPP`'s constructor at some point in the `__init__` method.**
 
 Example:
 ```python
 # parent class
 class Parent():
-    # Parent constructor
+    # parent constructor
     def __init__(self):
         print("Parent constructor")
 
