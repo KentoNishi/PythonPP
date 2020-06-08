@@ -1,4 +1,4 @@
-class privateScope:
+class PrivateScope:
     def __init__(self, values=dict()):
         for name, value in values.items():
             setattr(self, name, value)
@@ -6,9 +6,9 @@ class privateScope:
     def __setattr__(self, name, value):
         object.__setattr__(self, name, value)
     
-class objpp:
+class ObjPP:
     def __init__(self):
-        self.namespace(privateScope())
+        self.namespace(PrivateScope())
 
     def namespace(public, private):
         pass
