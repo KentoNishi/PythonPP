@@ -22,7 +22,7 @@ pip install --upgrade --no-cache-dir pythonpp
 
 ## Usage
 
-**A PythonPP class must extend PythonPP's `ClsPP` class.**
+**A Python++ class must extend `pythonpp`'s `ClsPP` class.**
 **The constructor must also call the `__init__` method of the parent `ClsPP` class.**
 
 > When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
@@ -134,7 +134,7 @@ class Parent():
 
 # child class
 class Child(ClsPP, Parent):
-    # Child constructor
+    # child constructor
     def __init__(self):
         print("Child constructor")
         super(ClsPP, self).__init__()
@@ -149,6 +149,7 @@ Alternatively, you can call the superclass constructors like so:
 ```python
 # child class
 class Child(ClsPP, Parent):
+    # child constructor
     def __init__(self):
         # Same as super(ClsPP, self).__init__()
         ClsPP.__init__(self)
