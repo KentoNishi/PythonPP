@@ -5,6 +5,12 @@ Python 3, but with proper encapsulation.
 
 PythonPP stands for ***Python** **P**lus **P**lus*.
 
+## Contributors
+
+[Ronak Badhe](https://github.com/r2dev2bb8)
+/
+[Kento Nishi](https://github.com/KentoNishi)
+
 ## Installation
 The package is available on PyPI.
 You can install the package with the following command:
