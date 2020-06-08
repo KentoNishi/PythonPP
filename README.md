@@ -66,7 +66,8 @@ class Test(ppp.objpp):
 
 You can define public and private variables using these scopes.
 
-**All variables and methods are declared private by default.**
+**All variables and methods are declared private by default when the scope is not specified.**
+**When you create a variable or method, it is highly recommended that you declare it private unless <u>absolutely necessary</u>.**
 
 Example:
 ```python
