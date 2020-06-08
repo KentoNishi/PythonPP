@@ -22,9 +22,10 @@ pip install pythonpp
 A detailed example of a class utilizing PythonPP is available in
 [this Jupyter notebook](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
 
-**A PythonPP object must extend PythonPP's `objpp` class.**
+> **A PythonPP object must extend PythonPP's `objpp` class.**
 **The constructor must also call the `__init__` method of the parent `objpp` class.**
-When no ``__init`` method is defined, `super().__init__()` will be executed automatically.
+
+> When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
 
 
 Example:
@@ -55,7 +56,7 @@ class Test(ppp.objpp):
         pass
 ```
 
-**All variable and method declarations must be done in the `namespace` method.**
+> **All variable and method declarations must be done in the `namespace` method.**
 
  The namespace method has two parameters.
 
@@ -66,7 +67,7 @@ class Test(ppp.objpp):
 
 You can define public and private variables using these scopes.
 
-**All variables and methods are declared private by default when the scope is not specified.**
+> **All variables and methods are declared private by default when the scope is not specified.**
 **When you create a variable or method, it is highly recommended that you declare it private unless <u>absolutely necessary</u>.**
 
 Example:
