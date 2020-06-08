@@ -1,15 +1,17 @@
-# PythonPP
+# Python++
 Python 3, but with proper encapsulation.
 
 [View on PyPI](https://pypi.org/project/pythonpp/)
 
 PythonPP stands for ***Python** **P**lus **P**lus*.
 
-## Contributors
+Python++ allows Python programmers to use object oriented programming principles in Python.
+Similar to Java, variables and methods can be **encapsulated**, or made **private**. 
 
-[Ronak Badhe](https://github.com/r2dev2bb8)
-/
-[Kento Nishi](https://github.com/KentoNishi)
+Encapsulation is useful when storing sensitive persistent data within instances of objects.
+For example, a programmer may want to hold a user's password in a variable - however,
+in vanilla Python, the password variable can be manipulated by any external code in possession of the object instance. 
+Python++ prevents such behavior by introducing private variables and methods to Python.
 
 ## Installation
 The package is available on PyPI.
@@ -19,10 +21,8 @@ pip install pythonpp
 ```
 
 ## Usage
-A detailed example of a class utilizing PythonPP is available in
-[this Jupyter notebook](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
 
-> **A PythonPP object must extend PythonPP's `objpp` class.**
+**A PythonPP object must extend PythonPP's `objpp` class.**
 **The constructor must also call the `__init__` method of the parent `objpp` class.**
 
 > When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
@@ -152,3 +152,9 @@ class Test(objpp):
             # Call the private method
             private.privateMethod()
 ```
+
+## Contributors
+
+[Ronak Badhe](https://github.com/r2dev2bb8)
+/
+[Kento Nishi](https://github.com/KentoNishi)
