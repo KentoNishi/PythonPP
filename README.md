@@ -22,8 +22,8 @@ pip install --upgrade --no-cache-dir pythonpp
 
 ## Usage
 
-**A PythonPP class must extend PythonPP's `objpp` class.**
-**The constructor must also call the `__init__` method of the parent `objpp` class.**
+**A PythonPP class must extend PythonPP's `ObjPP` class.**
+**The constructor must also call the `__init__` method of the parent `ObjPP` class.**
 
 > When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
 
