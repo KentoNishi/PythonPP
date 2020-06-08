@@ -27,7 +27,7 @@ pip install --upgrade --no-cache-dir pythonpp
 **A Python++ class must extend `pythonpp`'s `ClsPP` class.**
 **The constructor must also call the `__init__` method of the parent `ClsPP` class.**
 
-> When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
+When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
 
 
 Example:
@@ -73,7 +73,7 @@ class Test(ppp.ClsPP):
 
 You can define public and private variables using these scopes.
 
-> **All variables and methods are declared private by default when the scope is not specified.**
+**All variables and methods are declared private by default when the scope is not specified.**
 **When you create a variable or method, it is highly recommended that you declare it private unless <u>absolutely necessary</u>.**
 
 Example:
@@ -168,7 +168,7 @@ test.privateMethod()
 
 All Python++ classes must extend the `ClsPP` class. You can also create Python++ classes that extend other classes using multiple inheritance.
 
-> For Python++ to work properly, you must call `ClsPP`'s constructor at some point in the `__init__` method.
+For Python++ to work properly, you must call `ClsPP`'s constructor at some point in the `__init__` method.
 
 Example:
 ```python
