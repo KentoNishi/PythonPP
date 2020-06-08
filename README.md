@@ -22,6 +22,8 @@ pip install --upgrade --no-cache-dir pythonpp
 
 ## Usage
 
+### Importing the Library
+
 **A Python++ class must extend `pythonpp`'s `ClsPP` class.**
 **The constructor must also call the `__init__` method of the parent `ClsPP` class.**
 
@@ -58,7 +60,9 @@ class Test(ppp.ClsPP):
         pass
 ```
 
-> **All variable and method declarations must be done in the `namespace` method.**
+### Scopes and `namespace`
+
+**All variable and method declarations must be done in the `namespace` method.**
 
  The namespace method has two parameters.
 
@@ -74,51 +78,93 @@ You can define public and private variables using these scopes.
 
 Example:
 ```python
-# public variable
-public.hello = "hello"
+class Test(ClsPP):
+    def __init__(self):
+        super().__init__()
 
-# private variable
-private.world = "world"
+    def namespace(public, private):
+        # public variable
+        public.hello = "hello"
+
+        # private variable
+        private.world = "world"
 ```
 
-You can also declare public and private methods using the `@method(scope)` decorator.
+You can declare public and private methods using the `@method(scope)` decorator.
 
 Example:
 ```python
-# public method
-@method(public)
-def publicMethod():
-    print("Called publicMethod")
+class Test(ClsPP):
+    def __init__(self):
+        super().__init__()
 
-# private method
-@method(private)
-def privateMethod():
-    print("Called privateMethod")
+    def namespace(public, private):
+        # public method
+        @method(public)
+        def publicMethod():
+            print("Called publicMethod")
+
+        # private method
+        @method(private)
+        def privateMethod():
+            print("Called privateMethod")
 ```
 
-Public variables and methods can be accessed as usual.
+### External Access
+
+Public variables and methods can be accessed the same way as in vanilla Python. However, private variables and methods **cannot be accessed** externally.
 
 Example:
+```python
+from pythonpp import *
+
+class Test(ClsPP):
+    # Class constructor
+    def __init__(self):
+        # Call ClsPP's constructor.
+        super().__init__()
+
+    # Place all methods and field declarations here.
+    def namespace(public, private):
+        # public variable
+        public.hello = "hello"
+        # private variable
+        private.world = "world"
+
+        # public method
+        @method(public)
+        def publicMethod():
+            print("Called publicMethod")
+        
+        # private method
+        @method(private)
+        def privateMethod():
+            print("Called privateMethod")
+
+        # public method to call the private method.
+        @method(public)
+        def callPrivateMethod():
+            print("Calling privateMethod()")
+            # Call the private method
+            private.privateMethod()
+```
 ```python
 test = Test()
+
 # works as normal
 print(test.hello)
+
 # also works as normal
 test.publicMethod()
-```
 
-However, private variables and methods **cannot be accessed** externally.
-
-Example:
-```python
-test = Test()
 # results in an error
 print(test.world)
+
 # also results in an error
 test.privateMethod()
 ```
 
-## Inheritance
+### Inheritance
 
 All Python++ classes must extend the `ClsPP` class. You can also create Python++ classes that extend other classes using multiple inheritance.
 
@@ -160,42 +206,8 @@ class Child(ClsPP, Parent):
         pass
 ```
 
-## Example Class
-View the full Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
-
-```python
-from pythonpp import *
-
-class Test(ClsPP):
-    # Class constructor
-    def __init__(self):
-        # Call ClsPP's constructor.
-        super().__init__()
-
-    # Place all methods and field declarations here.
-    def namespace(public, private):
-        # public variable
-        public.hello = "hello"
-        # private variable
-        private.world = "world"
-
-        # public method
-        @method(public)
-        def publicMethod():
-            print("Called publicMethod")
-        
-        # private method
-        @method(private)
-        def privateMethod():
-            print("Called privateMethod")
-
-        # public method to call the private method.
-        @method(public)
-        def callPrivateMethod():
-            print("Calling privateMethod()")
-            # Call the private method
-            private.privateMethod()
-```
+## Full Example
+You can view the full Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
 
 ## Contributors
 
