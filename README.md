@@ -22,6 +22,7 @@ A PythonPP object must extend PythonPP's `objpp` class. The constructor must als
 Example:
 ```python
 from pythonpp import *
+
 # Class extends pythonpp's objpp class.
 class Test(objpp):
     # Class constructor
@@ -44,6 +45,8 @@ class Test(objpp):
 | `private` | The private scope. All variables in this scope can only be accessed internally. |
 
 You can define public and private variables using these scopes.
+
+**All variables and methods are declared private by default.**
 
 Example:
 ```python
@@ -69,11 +72,32 @@ def privateMethod():
     print("Called privateMethod")
 ```
 
+Public variables and methods can be accessed as usual:
+
+```python
+test = Test()
+# works as normal
+print(test.hello)
+# also works as normal
+test.publicMethod()
+```
+
+However, private variables and methods **cannot be accessed** externally.
+
+```python
+test = Test()
+# results in an error
+print(test.world)
+# also results in an error
+test.privateMethod()
+```
+
 ## Example Class
 View the full Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
 
 ```python
 from pythonpp import *
+
 class Test(objpp):
     # Class constructor
     def __init__(self):
