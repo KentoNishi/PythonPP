@@ -17,7 +17,7 @@ Python++ prevents such behavior by introducing private variables and methods to 
 The package is available on PyPI.
 You can install the package with the following command:
 ```shell
-pip install pythonpp
+pip install --upgrade pythonpp
 ```
 
 ## Usage
