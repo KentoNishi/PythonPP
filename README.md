@@ -81,7 +81,7 @@ public.hello = "hello"
 private.world = "world"
 ```
 
-You can also use the public and private scopes to declare methods.
+You can also declare public and private methods using the `@method(scope)` decorator.
 
 Example:
 ```python
@@ -172,7 +172,7 @@ class Test(ClsPP):
         # Call ClsPP's constructor.
         super().__init__()
 
-    # Place all methods and field declerations here.
+    # Place all methods and field declarations here.
     def namespace(public, private):
         # public variable
         public.hello = "hello"
