@@ -26,13 +26,20 @@ class __PrivateScope:
 
 def PythonPP(cls):
     copiedInit = __copyMethod(cls.__init__)
+    staticPrivateScope = __PrivateScope()
+
+    class Scope:
+        def __init__(self, instance, static):
+            self.instance = instance
+            self.static = static
 
     def newInit(self):
         copiedInit(self)
-        self.instance(__PrivateScope())
+        publicScope = Scope(self, self.__class__)
+        privateScope = Scope(__PrivateScope(), staticPrivateScope)
+        self.__class__.namespace(publicScope, privateScope)
 
     cls.__init__ = newInit
-    cls.static(cls, __PrivateScope())
     return cls
 
 
