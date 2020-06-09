@@ -1,5 +1,7 @@
 import types
 import functools
+import sys
+from importlib import reload
 
 
 def __copyMethod(f):
@@ -37,12 +39,12 @@ def __parametrized(dec):
     return layer
 
 
-@__parametrized
-def constructor(func, cls):
-    cls.user_constructor = func
-    def inner(*args, **kwargs):
-        return func(*args, **kwargs)
-    return inner
+def __constructorCallback(func):
+    pass
+
+
+def constructor(func):
+    __constructorCallback(func)
 
 
 def PythonPP(cls):
@@ -88,6 +90,19 @@ def PythonPP(cls):
             if initDone or not hasattr(super().__getattribute__("static"), name):
                 object.__setattr__(super().__getattribute__("static"), name, value)
 
+    userConstructor = None
+
+    def newConstructorDecorator(func):
+        nonlocal userConstructor
+        userConstructor = func
+
+        def inner(*args, **kwargs):
+            return func(*args, **kwargs)
+
+        return inner
+
+    global __constructorCallback
+    __constructorCallback = newConstructorDecorator
     copiedInit = __copyMethod(cls.__init__)
 
     def setAttr(self, name, value):
@@ -99,7 +114,8 @@ def PythonPP(cls):
         return object.__getattribute__(self, name)
 
     def newInit(self, *args, **kwargs):
-        nonlocal copiedInit
+
+        nonlocal copiedInit, userConstructor
         copiedInit(self)
 
         staticPublicScope = PublicStaticWrapper(cls)
@@ -108,13 +124,14 @@ def PythonPP(cls):
         privateScope = Scope(__PrivateScope(), staticPrivateScope)
 
         cls.namespace(publicScope, privateScope)
-        self.user_constructor(*args, **kwargs)
+        userConstructor(*args, **kwargs)
 
         initDone = True
         cls.__getattribute__ = getAttr
         cls.__setattr__ = setAttr
 
     cls.__init__ = newInit
+
     return cls
 
 
