@@ -56,8 +56,9 @@ class Test1:
 class Test2:
     def namespace(public, private):
         @constructor
-        def __init__(key):
+        def __init__(key, koy):
             private.key = key
+            private.koy = koy
             
         @method(public)
         def revealArgs():
