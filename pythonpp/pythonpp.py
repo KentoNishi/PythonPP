@@ -1,7 +1,7 @@
 import types
 import functools
 import sys
-from importlib import reload
+import traceback
 
 
 def __copyMethod(f):
@@ -108,10 +108,17 @@ def PythonPP(cls):
     def setAttr(self, name, value):
         object.__setattr__(self, name, value)
 
+    builtinAttr = False
+
     def getAttr(self, name):
-        if hasattr(cls, name):
+        nonlocal builtinAttr
+        if (name[:2] == "__") and (name[-2:] == "__"):
+            builtinAttr = True
+        if (not builtinAttr) and hasattr(cls, name):
             raise AttributeError("You cannot access static variables from an instance.")
-        return object.__getattribute__(self, name)
+        result = object.__getattribute__(self, name)
+        builtinAttr = False
+        return result
 
     def newInit(self, *args, **kwargs):
 
