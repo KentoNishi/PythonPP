@@ -2,3 +2,5 @@
 *~
 __pycache__/
 .vscode/
+examples/test_script.py
+examples/pythonpp.py

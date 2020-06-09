@@ -27,8 +27,22 @@ class __PrivateScope:
         object.__setattr__(self, name, value)
 
 
-def constructor(func):
-    func()
+def __parametrized(dec):
+    def layer(*args, **kwargs):
+        def repl(f):
+            return dec(f, *args, **kwargs)
+
+        return repl
+
+    return layer
+
+
+@__parametrized
+def constructor(func, cls):
+    cls.user_constructor = func
+    def inner(*args, **kwargs):
+        return func(*args, **kwargs)
+    return inner
 
 
 def PythonPP(cls):
@@ -84,7 +98,7 @@ def PythonPP(cls):
             raise AttributeError("You cannot access static variables from an instance.")
         return object.__getattribute__(self, name)
 
-    def newInit(self):
+    def newInit(self, *args, **kwargs):
         nonlocal copiedInit
         copiedInit(self)
 
@@ -94,6 +108,7 @@ def PythonPP(cls):
         privateScope = Scope(__PrivateScope(), staticPrivateScope)
 
         cls.namespace(publicScope, privateScope)
+        self.user_constructor(*args, **kwargs)
 
         initDone = True
         cls.__getattribute__ = getAttr
@@ -101,16 +116,6 @@ def PythonPP(cls):
 
     cls.__init__ = newInit
     return cls
-
-
-def __parametrized(dec):
-    def layer(*args, **kwargs):
-        def repl(f):
-            return dec(f, *args, **kwargs)
-
-        return repl
-
-    return layer
 
 
 @__parametrized
