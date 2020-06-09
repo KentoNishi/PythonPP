@@ -4,6 +4,14 @@ import sys
 import traceback
 
 
+def __constructorCallback(func):
+    pass
+
+
+def constructor(func):
+    __constructorCallback(func)
+
+
 def __copyMethod(f):
     try:
         g = types.FunctionType(
@@ -37,14 +45,6 @@ def __parametrized(dec):
         return repl
 
     return layer
-
-
-def __constructorCallback(func):
-    pass
-
-
-def constructor(func):
-    __constructorCallback(func)
 
 
 def PythonPP(cls):
@@ -101,8 +101,6 @@ def PythonPP(cls):
 
         return inner
 
-    global __constructorCallback
-    __constructorCallback = newConstructorDecorator
     copiedInit = __copyMethod(cls.__init__)
 
     def setAttr(self, name, value):
@@ -112,7 +110,7 @@ def PythonPP(cls):
 
     def getAttr(self, name):
         nonlocal builtinAttr
-        if (name[:2] == "__") and (name[-2:] == "__"):
+        if (name.startswith("__")) and (name.endswith("__")):
             builtinAttr = True
         if (not builtinAttr) and hasattr(cls, name):
             raise AttributeError("You cannot access static variables from an instance.")
@@ -122,7 +120,11 @@ def PythonPP(cls):
 
     def newInit(self, *args, **kwargs):
 
-        nonlocal copiedInit, userConstructor
+        nonlocal copiedInit, userConstructor, newConstructorDecorator
+        global __constructorCallback
+
+        __constructorCallback = newConstructorDecorator
+
         copiedInit(self)
 
         staticPublicScope = PublicStaticWrapper(cls)
