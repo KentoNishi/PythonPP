@@ -27,9 +27,15 @@ class __PrivateScope:
         object.__setattr__(self, name, value)
 
 
+def constructor(func):
+    func()
+
+
 def PythonPP(cls):
     class Wrapper:
         pass
+
+    initDone = False
 
     class Scope(Wrapper):
         def __init__(self, instance, static):
@@ -37,50 +43,61 @@ def PythonPP(cls):
             super().__setattr__("static", static)
 
         def __getattribute__(self, name):
-            try:
-                if name == "static":
-                    return super().__getattribute__("static")
-                return super().__getattribute__("instance").__getattribute__(name)
-            except AttributeError:
-                return super().__getattribute__("static").__getattribute__(name)
+            if name == "static":
+                return super().__getattribute__("static")
+            return super().__getattribute__("instance").__getattribute__(name)
 
         def __setattr__(self, name, value):
-            try:
-                object.__getattribute__(super().__getattribute__("static"), name)
-                super().__getattribute__("static").__setattr__(name, value)
-            except AttributeError:
-                super().__getattribute__("instance").__setattr__(name, value)
+            object.__setattr__(super().__getattribute__("instance"), name, value)
 
-    copiedGetAttr = None
+    class PublicStaticWrapper(Wrapper):
+        def __init__(self, static):
+            super().__setattr__("static", static)
+
+        def __getattribute__(self, name):
+            return object.__getattribute__(super().__getattribute__("static"), name)
+
+        def __setattr__(self, name, value):
+            if initDone or not hasattr(super().__getattribute__("static"), name):
+                setattr(
+                    super().__getattribute__("static"), name, value,
+                )
+
+    class PrivateStaticWrapper(Wrapper):
+        def __init__(self, static):
+            super().__setattr__("static", static)
+
+        def __getattribute__(self, name):
+            return object.__getattribute__(super().__getattribute__("static"), name)
+
+        def __setattr__(self, name, value):
+            if initDone or not hasattr(super().__getattribute__("static"), name):
+                object.__setattr__(super().__getattribute__("static"), name, value)
+
     copiedInit = __copyMethod(cls.__init__)
 
-    def newGetAttr(self, name):
-        print(name)
-        try:
-            return object.__getattribute__(
-                object.__getattribute__(self, "__class__"), name
-            )
-        except AttributeError:
-            return copiedGetAttr(self, name)
+    def setAttr(self, name, value):
+        object.__setattr__(self, name, value)
 
-    def newSetAttr(self, name, value):
-        try:
-            object.__getattribute__(object.__getattribute__(self, "__class__"), name)
-            object.__getattribute__(self, "__class__").__setattr__(name, value)
-        except AttributeError:
-            object.__setattr__(self, name, value)
+    def getAttr(self, name):
+        if hasattr(cls, name):
+            raise AttributeError("You cannot access static variables from an instance.")
+        return object.__getattribute__(self, name)
 
     def newInit(self):
-        nonlocal copiedInit, copiedGetAttr
+        nonlocal copiedInit
         copiedInit(self)
-        staticPublicScope = self.__class__
-        staticPrivateScope = __PrivateScope()
-        publicScope = Scope(self, self.__class__)
+
+        staticPublicScope = PublicStaticWrapper(cls)
+        staticPrivateScope = PrivateStaticWrapper(__PrivateScope())
+        publicScope = Scope(self, staticPublicScope)
         privateScope = Scope(__PrivateScope(), staticPrivateScope)
-        self.__class__.namespace(publicScope, privateScope)
-        copiedGetAttr = __copyMethod(self.__getattribute__)
-        self.__getattribute__ = newGetAttr
-        self.__setattr__ = newSetAttr
+
+        cls.namespace(publicScope, privateScope)
+
+        initDone = True
+        cls.__getattribute__ = getAttr
+        cls.__setattr__ = setAttr
 
     cls.__init__ = newInit
     return cls
