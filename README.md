@@ -1,6 +1,10 @@
 # Python++
 Python 3, but with proper encapsulation.
 
+> ⚠ A major update is in development for Python++.
+> We recommend that you wait until the next major release,
+> as the majority of the library will be deprecated.
+
 [View on PyPI](https://pypi.org/project/pythonpp/)
 
 PythonPP stands for ***Python** **P**lus **P**lus*.
@@ -34,11 +38,11 @@ Example:
 ```python
 from pythonpp import *
 
-# Class extends pythonpp's ClsPP class.
+# class extends pythonpp's ClsPP class.
 class Test(ClsPP):
-    # Class constructor
+    # class constructor
     def __init__(self):
-        # Call ClsPP's constructor.
+        # call ClsPP's constructor.
         super().__init__()
     
     def namespace(public, private):
@@ -121,12 +125,12 @@ Example:
 from pythonpp import *
 
 class Test(ClsPP):
-    # Class constructor
+    # class constructor
     def __init__(self):
         # Call ClsPP's constructor.
         super().__init__()
 
-    # Place all methods and field declarations here.
+    # place all methods and field declarations here.
     def namespace(public, private):
         # public variable
         public.hello = "hello"
