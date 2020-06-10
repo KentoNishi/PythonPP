@@ -199,17 +199,9 @@ def PythonPP(cls):
         baseConstructors = []
         for base in self.__class__.__bases__:
             baseConstructors.append((base, base.__init__))
-            beforeReplacement = base.__init__
 
             def replacementNamespace(self, *a, **k):
-                if len(a) == 0:
-                    return
-                if a[0] == self:
-                    base.namespace(*a[:2], **k)
-                    beforeReplacement(self, *a[2:], **k)
-                else:
-                    base.namespace(self, *a[:1], **k)
-                    beforeReplacement(self, *a[1:], **k)
+                base.namespace(*a, **k)
 
             base.__init__ = replacementNamespace
 
