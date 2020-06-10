@@ -24,6 +24,7 @@ __callback = __empty
 __customConstructor = __empty
 __publicScope = None
 __privateScope = None
+__bottomLevel = None
 
 
 @__parametrized
@@ -103,12 +104,21 @@ def PythonPP(cls):
     __callback = callback
 
     def __init__(self, *args, **kwargs):
-        global __customConstructor, __publicScope, __privateScope
-        if __publicScope == None or __privateScope == None:
+        global __customConstructor, __publicScope, __privateScope, __bottomLevel
+        if __bottomLevel == None:
             __publicScope = Scope(self, self.__class__)
             __privateScope = Scope(Container(), staticPrivateScope)
+            __bottomLevel = cls
+        __customConstructor = __empty
+        for base in cls.__bases__:
+            if(hasattr(base, "namespace")):
+                base.namespace(__publicScope, __privateScope)
         cls.namespace(__publicScope, __privateScope)
         __customConstructor(*args, **kwargs)
+        if(cls == __bottomLevel):
+            __publicScope = None
+            __privateScope = None
+            __bottomLevel = None
 
     cls.__init__ = __init__
     return cls
