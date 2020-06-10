@@ -196,9 +196,28 @@ def PythonPP(cls):
         publicScope = Scope(self, staticPublicScope)
         privateScope = Scope(__PrivateScope(), staticPrivateScope)
 
+        baseConstructors = []
+        for base in self.__class__.__bases__:
+            baseConstructors.append((base, base.__init__))
+            beforeReplacement = base.__init__
+
+            def replacementNamespace(self, *a, **k):
+                if len(a) == 0:
+                    return
+                if a[0] == self:
+                    base.namespace(*a[:2], **k)
+                    beforeReplacement(self, *a[2:], **k)
+                else:
+                    base.namespace(self, *a[:1], **k)
+                    beforeReplacement(self, *a[1:], **k)
+
+            base.__init__ = replacementNamespace
+
         cls.namespace(publicScope, privateScope)
         userConstructor(*args, **kwargs)
 
+        for base in baseConstructors:
+            base[0].__init__ = base[1]
 
         initDone = True
         cls.__getattribute__ = getAttr
