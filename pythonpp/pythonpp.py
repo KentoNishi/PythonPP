@@ -12,6 +12,9 @@ def __constructorCallback(func):
     pass
 
 
+__empty = lambda *args, **kwargs: None
+
+
 def constructor(func):
     """
     Constructor Wrapper for Python++ classes
@@ -43,7 +46,7 @@ def __copyMethod(f):
         g = functools.update_wrapper(g, f)
         g.__kwdefaults__ = f.__kwdefaults__
     except AttributeError:
-        return lambda *args, **kwargs: None
+        return __empty
     return g
 
 
@@ -156,7 +159,7 @@ def PythonPP(cls):
 
         return inner
 
-    copiedInit = __copyMethod(cls.__init__)
+    # copiedInit = __copyMethod(cls.__init__)
 
     def setAttr(self, name, value):
         object.__setattr__(self, name, value)
@@ -181,20 +184,32 @@ def PythonPP(cls):
         The replacement __init__ function for the user's class.
         Executes the original constructor, call
         """
-        nonlocal copiedInit, userConstructor, newConstructorCallback, initDone
+        nonlocal userConstructor, newConstructorCallback, initDone  # , copiedInit
         global __constructorCallback
 
         __constructorCallback = newConstructorCallback
 
-        copiedInit(self)
+        # copiedInit(self)
 
         staticPublicScope = PublicStaticWrapper(cls)
         staticPrivateScope = PrivateStaticWrapper(__PrivateScope())
         publicScope = Scope(self, staticPublicScope)
         privateScope = Scope(__PrivateScope(), staticPrivateScope)
 
+        baseConstructors = []
+        for base in self.__class__.__bases__:
+            baseConstructors.append((base, base.__init__))
+
+            def replacementNamespace(self, *a, **k):
+                base.namespace(*a, **k)
+
+            base.__init__ = replacementNamespace
+
         cls.namespace(publicScope, privateScope)
         userConstructor(*args, **kwargs)
+
+        for base in baseConstructors:
+            base[0].__init__ = base[1]
 
         initDone = True
         cls.__getattribute__ = getAttr
