@@ -92,18 +92,54 @@ def PythonPP(cls):
         def __setattr__(self, name, value):
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
-    staticPrivateScope = Container()
+    class StaticWrapper:
+        def __init__(self, container):
+            object.__setattr__(self, "container", container)
+
+        def __getattribute__(self, name):
+            return getattr(object.__getattribute__(self, "container"), name)
+
+        def __setattr__(self, name, value):
+            return setattr(object.__getattribute__(self, "container"), name, value)
+
+    def blockStatic(name):
+        permitted = name.startswith("__") and name.endswith("__")
+        if (not permitted) and hasattr(cls, name):
+            raise AttributeError(
+                f"Access to static variable or method \"{name}\" from an instance is not permitted."
+            )
+
+    staticPrivateScope = StaticWrapper(Container())
+    staticPublicScope = StaticWrapper(cls)
 
     def __init__(self, *args, **kwargs):
         global __customConstructor, __publicScope, __privateScope, __bottomLevel
         if __bottomLevel == None:
-            __publicScope = Scope(self, self.__class__)
+            __publicScope = Scope(self, staticPublicScope)
             __privateScope = Scope(Container(), staticPrivateScope)
             __bottomLevel = cls
         for base in cls.__bases__:
             if hasattr(base, "namespace"):
                 base.namespace(__publicScope, __privateScope)
         cls.namespace(__publicScope, __privateScope)
+
+        copiedGetAttribute = __copyMethod(cls.__getattribute__)
+        copiedSetAttribute = __copyMethod(cls.__setattr__)
+
+        def __getattribute__(self, name):
+            nonlocal copiedGetAttribute
+            blockStatic(name)
+            copiedGetAttribute(self, name)
+            return object.__getattribute__(self, name)
+
+        def __setattr__(self, name, value):
+            nonlocal copiedSetAttribute
+            blockStatic(name)
+            copiedSetAttribute(self, name, value)
+            return object.__setattr__(self, name, value)
+
+        cls.__getattribute__ = __getattribute__
+        cls.__setattr__ = __setattr__
 
         if len(inspect.signature(__customConstructor).parameters) == len(args) + 1:
             __customConstructor(self, *args, **kwargs)
@@ -117,7 +153,9 @@ def PythonPP(cls):
 
     cls.__init__ = __init__
 
-    cls.namespace(Scope(Container(), cls), Scope(Container(), staticPrivateScope))
+    cls.namespace(
+        Scope(Container(), staticPublicScope), Scope(Container(), staticPrivateScope)
+    )
 
     return cls
 
