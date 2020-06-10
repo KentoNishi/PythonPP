@@ -21,6 +21,10 @@ def __parametrized(dec):
 __empty = lambda *args, **kwargs: None
 __callback = __empty
 
+__customConstructor = __empty
+__publicScope = None
+__privateScope = None
+
 
 @__parametrized
 def constructor(func, public, private):
@@ -88,27 +92,23 @@ def PythonPP(cls):
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
     staticPrivateScope = Container()
-    customConstructor = __empty
-    publicScope = None
-    privateScope = None
 
     def callback(func, public, private):
-        print(func)
-        nonlocal customConstructor
-        customConstructor = func
-        publicScope = public
-        privateScope = private
+        global __customConstructor, __publicScope, __privateScope
+        __customConstructor = func
+        __publicScope = public
+        __privateScope = private
 
     global __callback
     __callback = callback
 
     def __init__(self, *args, **kwargs):
-        nonlocal customConstructor, publicScope, privateScope
-        if publicScope == None or privateScope == None:
-            publicScope = Scope(self, self.__class__)
-            privateScope = Scope(Container(), staticPrivateScope)
-        cls.namespace(publicScope, privateScope)
-        customConstructor(*args, **kwargs)
+        global __customConstructor, __publicScope, __privateScope
+        if __publicScope == None or __privateScope == None:
+            __publicScope = Scope(self, self.__class__)
+            __privateScope = Scope(Container(), staticPrivateScope)
+        cls.namespace(__publicScope, __privateScope)
+        __customConstructor(*args, **kwargs)
 
     cls.__init__ = __init__
     return cls
