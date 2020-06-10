@@ -92,7 +92,7 @@ def PythonPP(cls):
         def __setattr__(self, name, value):
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
-    class StaticWrapper:
+    class ContainerWrapper:
         def __init__(self, container):
             object.__setattr__(self, "container", container)
 
@@ -106,17 +106,17 @@ def PythonPP(cls):
         permitted = name.startswith("__") and name.endswith("__")
         if (not permitted) and hasattr(cls, name):
             raise AttributeError(
-                f"Access to static variable or method \"{name}\" from an instance is not permitted."
+                f'Access to static variable or method "{name}" from an instance is not permitted.'
             )
 
-    staticPrivateScope = StaticWrapper(Container())
-    staticPublicScope = StaticWrapper(cls)
+    staticPrivateScope = ContainerWrapper(Container())
+    staticPublicScope = ContainerWrapper(cls)
 
     def __init__(self, *args, **kwargs):
         global __customConstructor, __publicScope, __privateScope, __bottomLevel
         if __bottomLevel == None:
             __publicScope = Scope(self, staticPublicScope)
-            __privateScope = Scope(Container(), staticPrivateScope)
+            __privateScope = Scope(ContainerWrapper(Container()), staticPrivateScope)
             __bottomLevel = cls
         for base in cls.__bases__:
             if hasattr(base, "namespace"):
