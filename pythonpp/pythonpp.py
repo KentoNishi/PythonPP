@@ -116,6 +116,9 @@ def PythonPP(cls):
             __customConstructor = __empty
 
     cls.__init__ = __init__
+
+    cls.namespace(Scope(Container(), cls), Scope(Container(), staticPrivateScope))
+
     return cls
 
 
