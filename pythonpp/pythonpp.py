@@ -1,7 +1,7 @@
 import types
 import functools
 import sys
-import traceback
+import inspect
 
 
 def __parametrized(dec):
@@ -19,16 +19,15 @@ def __parametrized(dec):
 
 
 __empty = lambda *args, **kwargs: None
-__callback = __empty
 
 __customConstructor = __empty
 __publicScope = None
 __privateScope = None
 __bottomLevel = None
 
-
-@__parametrized
-def constructor(func, public, private):
+# @__parametrized
+# No parameterization when using one parameter
+def constructor(func):
     """
     Constructor Wrapper for Python++ classes
     The decorator does not take any arguments.
@@ -41,7 +40,8 @@ def constructor(func, public, private):
         private.variable1 = variable1
         private.static.variable2 = variable2
     """
-    __callback(func, public, private)
+    global __customConstructor
+    __customConstructor = func
 
 
 def __copyMethod(f):
@@ -86,7 +86,7 @@ def PythonPP(cls):
 
         def __getattribute__(self, name):
             if name == "static":
-                return self.static
+                return object.__getattribute__(self, "static")
             return object.__getattribute__(self, "instance").__getattribute__(name)
 
         def __setattr__(self, name, value):
@@ -94,31 +94,26 @@ def PythonPP(cls):
 
     staticPrivateScope = Container()
 
-    def callback(func, public, private):
-        global __customConstructor, __publicScope, __privateScope
-        __customConstructor = func
-        __publicScope = public
-        __privateScope = private
-
-    global __callback
-    __callback = callback
-
     def __init__(self, *args, **kwargs):
         global __customConstructor, __publicScope, __privateScope, __bottomLevel
         if __bottomLevel == None:
             __publicScope = Scope(self, self.__class__)
             __privateScope = Scope(Container(), staticPrivateScope)
             __bottomLevel = cls
-        __customConstructor = __empty
         for base in cls.__bases__:
-            if(hasattr(base, "namespace")):
+            if hasattr(base, "namespace"):
                 base.namespace(__publicScope, __privateScope)
         cls.namespace(__publicScope, __privateScope)
-        __customConstructor(*args, **kwargs)
-        if(cls == __bottomLevel):
+
+        if len(inspect.signature(__customConstructor).parameters) == len(args) + 1:
+            __customConstructor(self, *args, **kwargs)
+        else:
+            __customConstructor(*args, **kwargs)
+        if cls == __bottomLevel:
             __publicScope = None
             __privateScope = None
             __bottomLevel = None
+            __customConstructor = __empty
 
     cls.__init__ = __init__
     return cls
@@ -137,7 +132,7 @@ def method(func, cls):
 
     :param cls - the scope which the method is exposed to
     """
-    object.__setattr__(cls, func.__name__, func)
+    setattr(cls, func.__name__, func)
 
     def inner(*args, **kwargs):
         return func(*args, **kwargs)
