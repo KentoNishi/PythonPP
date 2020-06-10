@@ -1,9 +1,10 @@
 # Python++
 Python 3, but with proper encapsulation.
 
-> ⚠ A major update is in development for Python++.
-> We recommend that you wait until the next major release,
-> as the majority of the library will be deprecated.
+## ⚠ WARNING ⚠
+**A major update is in development for Python++.**
+**We recommend that you wait until the next major release,**
+**as the majority of the library will be deprecated.**
 
 [View on PyPI](https://pypi.org/project/pythonpp/)
 
