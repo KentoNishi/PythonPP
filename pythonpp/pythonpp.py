@@ -4,18 +4,26 @@ import sys
 import traceback
 
 
-def __constructorCallback(func):
+def __parametrized(dec):
     """
-    Called by the constructor.
-    Dynamically replaced by PythonPP.
+    Allows existence of function wrappers with arguments which can have functions with arguments.
     """
-    pass
+
+    def layer(*args, **kwargs):
+        def repl(f):
+            return dec(f, *args, **kwargs)
+
+        return repl
+
+    return layer
 
 
 __empty = lambda *args, **kwargs: None
+__callback = __empty
 
 
-def constructor(func):
+@__parametrized
+def constructor(func, public, private):
     """
     Constructor Wrapper for Python++ classes
     The decorator does not take any arguments.
@@ -28,7 +36,7 @@ def constructor(func):
         private.variable1 = variable1
         private.static.variable2 = variable2
     """
-    __constructorCallback(func)
+    __callback(func, public, private)
 
 
 def __copyMethod(f):
@@ -50,20 +58,6 @@ def __copyMethod(f):
     return g
 
 
-def __parametrized(dec):
-    """
-    Allows existence of function wrappers with arguments which can have functions with arguments.
-    """
-
-    def layer(*args, **kwargs):
-        def repl(f):
-            return dec(f, *args, **kwargs)
-
-        return repl
-
-    return layer
-
-
 def PythonPP(cls):
     """
     The class wrapper to create Python++ objects.
@@ -77,146 +71,46 @@ def PythonPP(cls):
             public.static.testVariable = "Hello World!"
     """
 
-    class __PrivateScope:
-        """
-        A private scope type.
-        This is just an object but it can set attributes with dot notation.
-        """
-
-        def __init__(self, values=dict()):
-            for name, value in values.items():
-                setattr(self, name, value)
-
-        def __setattr__(self, name, value):
-            object.__setattr__(self, name, value)
-
-    class Wrapper:
-        """
-        An empty wrapper for scopes and data carrier classes.
-        """
-
+    class Container:
         pass
 
-    initDone = False
-    # signals if the constructor of the class finished executing.
-
-    class Scope(Wrapper):
-        """
-        A Scope type which defaults attributes to instance.
-        
-        eg. If one gets an attribute, it will return instance.attribute
-        """
-
+    class Scope:
         def __init__(self, instance, static):
-            super().__setattr__("instance", instance)
-            super().__setattr__("static", static)
+            object.__setattr__(self, "instance", instance)
+            object.__setattr__(self, "static", static)
 
         def __getattribute__(self, name):
             if name == "static":
-                return super().__getattribute__("static")
-            return super().__getattribute__("instance").__getattribute__(name)
+                return self.static
+            return object.__getattribute__(self, "instance").__getattribute__(name)
 
         def __setattr__(self, name, value):
-            object.__setattr__(super().__getattribute__("instance"), name, value)
+            object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
-    class PublicStaticWrapper(Wrapper):
-        def __init__(self, static):
-            super().__setattr__("static", static)
+    staticPrivateScope = Container()
+    customConstructor = __empty
+    publicScope = None
+    privateScope = None
 
-        def __getattribute__(self, name):
-            return object.__getattribute__(super().__getattribute__("static"), name)
+    def callback(func, public, private):
+        print(func)
+        nonlocal customConstructor
+        customConstructor = func
+        publicScope = public
+        privateScope = private
 
-        def __setattr__(self, name, value):
-            if initDone or not hasattr(super().__getattribute__("static"), name):
-                setattr(
-                    super().__getattribute__("static"), name, value,
-                )
+    global __callback
+    __callback = callback
 
-    class PrivateStaticWrapper(Wrapper):
-        def __init__(self, static):
-            super().__setattr__("static", static)
-
-        def __getattribute__(self, name):
-            return object.__getattribute__(super().__getattribute__("static"), name)
-
-        def __setattr__(self, name, value):
-            if initDone or not hasattr(super().__getattribute__("static"), name):
-                object.__setattr__(super().__getattribute__("static"), name, value)
-
-    userConstructor = lambda *args, **kwargs: None
-
-    def newConstructorCallback(func):
-        """
-        The replacement constructor decorator that takes the place of
-        __constructorCallback. userConstructor is set to the function passed
-        to the @constructor decorator.
-        """
-        nonlocal userConstructor
-        userConstructor = func
-
-        def inner(*args, **kwargs):
-            return func(*args, **kwargs)
-
-        return inner
-
-    # copiedInit = __copyMethod(cls.__init__)
-
-    def setAttr(self, name, value):
-        object.__setattr__(self, name, value)
-
-    builtinAttr = False
-
-    def getAttr(self, name):
-        """
-        A get attribute function which doesn't allow access to static variables from instance methods.
-        """
-        nonlocal builtinAttr
-        if name.startswith("__") and name.endswith("__"):
-            builtinAttr = True
-        if (not builtinAttr) and hasattr(cls, name):
-            raise AttributeError("You cannot access static variables from an instance.")
-        result = object.__getattribute__(self, name)
-        builtinAttr = False
-        return result
-
-    def newInit(self, *args, **kwargs):
-        """
-        The replacement __init__ function for the user's class.
-        Executes the original constructor, call
-        """
-        nonlocal userConstructor, newConstructorCallback, initDone  # , copiedInit
-        global __constructorCallback
-
-        __constructorCallback = newConstructorCallback
-
-        # copiedInit(self)
-
-        staticPublicScope = PublicStaticWrapper(cls)
-        staticPrivateScope = PrivateStaticWrapper(__PrivateScope())
-        publicScope = Scope(self, staticPublicScope)
-        privateScope = Scope(__PrivateScope(), staticPrivateScope)
-
-        baseConstructors = []
-        for base in self.__class__.__bases__:
-            baseConstructors.append((base, base.__init__))
-
-            def replacementNamespace(self, *a, **k):
-                base.namespace(*a, **k)
-
-            base.__init__ = replacementNamespace
-
+    def __init__(self, *args, **kwargs):
+        nonlocal customConstructor, publicScope, privateScope
+        if publicScope == None or privateScope == None:
+            publicScope = Scope(self, self.__class__)
+            privateScope = Scope(Container(), staticPrivateScope)
         cls.namespace(publicScope, privateScope)
-        userConstructor(*args, **kwargs)
+        customConstructor(*args, **kwargs)
 
-        for base in baseConstructors:
-            base[0].__init__ = base[1]
-
-        initDone = True
-        cls.__getattribute__ = getAttr
-        cls.__setattr__ = setAttr
-
-    cls.__init__ = newInit
-
+    cls.__init__ = __init__
     return cls
 
 
@@ -233,7 +127,7 @@ def method(func, cls):
 
     :param cls - the scope which the method is exposed to
     """
-    setattr(cls, func.__name__, func)
+    object.__setattr__(cls, func.__name__, func)
 
     def inner(*args, **kwargs):
         return func(*args, **kwargs)
