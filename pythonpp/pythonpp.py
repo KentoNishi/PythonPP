@@ -27,7 +27,8 @@ __customConstructor = __empty
 __publicScope = None
 __privateScope = None
 __bottomLevel = None
-__blacklist = ["constructor", "namespace"]
+__namespacing = None
+__BLACKLIST = ["constructor", "namespace", "method", "static"]
 
 # @__parametrized
 # No parameterization when using one parameter
@@ -79,6 +80,7 @@ def PythonPP(cls):
         def namespace(public, private):
             public.static.testVariable = "Hello World!"
     """
+    global __BLACKLIST
 
     class Container:
         pass
@@ -94,6 +96,8 @@ def PythonPP(cls):
             return object.__getattribute__(self, "instance").__getattribute__(name)
 
         def __setattr__(self, name, value):
+            if name in globals()["__BLACKLIST"]:
+                raise AttributeError(f'Methods and variables cannot be named "{name}".')
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
     class ContainerWrapper:
@@ -119,7 +123,7 @@ def PythonPP(cls):
     def __init__(firstArg, *args, **kwargs):
         # firstArg is self if bottom level is not set
         # firstArg may not be self otherwise
-        global __customConstructor, __publicScope, __privateScope, __bottomLevel
+        global __customConstructor, __publicScope, __privateScope, __bottomLevel, __namespacing
         nonlocal staticPublicScope, staticPrivateScope
         if __bottomLevel == None:
             __publicScope = Scope(firstArg, staticPublicScope)
@@ -127,8 +131,12 @@ def PythonPP(cls):
             __bottomLevel = cls
         for base in cls.__bases__:
             if hasattr(base, "namespace"):
+                __namespacing = base
                 base.namespace(__publicScope, __privateScope)
+                __namespacing = None
+        __namespacing = cls
         cls.namespace(__publicScope, __privateScope)
+        __namespacing = None
 
         copiedGetAttribute = __copyMethod(cls.__getattribute__)
         copiedSetAttribute = __copyMethod(cls.__setattr__)
@@ -166,8 +174,8 @@ def PythonPP(cls):
         if __customConstructor.__name__ is cls.__name__:
             __customConstructor(*args, **kwargs)
         else:
-            raise RuntimeError(
-                f"The constructor for \"{cls.__name__}\" must match the class name."
+            raise AttributeError(
+                f'The constructor for "{cls.__name__}" must match the class name.'
             )
 
         if cls == __bottomLevel:
@@ -184,9 +192,12 @@ def PythonPP(cls):
 
     cls.constructor = staticConstructor
 
+    global __namespacing
+    __namespacing = cls
     cls.namespace(
         Scope(Container(), staticPublicScope), Scope(Container(), staticPrivateScope)
     )
+    __namespacing = None
 
     return cls
 
@@ -204,8 +215,13 @@ def method(func, cls):
 
     :param cls - the scope which the method is exposed to
     """
-    if func.__name__ in __blacklist:
+    global __namespacing, __BLACKLIST
+    if func.__name__ in __BLACKLIST:
         raise AttributeError(f'Methods cannot be named "{func.__name__}".')
+    elif func.__name__ is __namespacing.__qualname__:
+        raise AttributeError(
+            f'The method name "{func.__name__}" is reserved for the constructor.'
+        )
     setattr(cls, func.__name__, func)
 
     def inner(*args, **kwargs):
