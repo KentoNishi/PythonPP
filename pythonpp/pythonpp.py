@@ -2,6 +2,9 @@ import types
 import functools
 import sys
 import inspect
+import warnings
+
+warnings.simplefilter("always")
 
 
 def __parametrized(dec):
@@ -24,6 +27,7 @@ __customConstructor = __empty
 __publicScope = None
 __privateScope = None
 __bottomLevel = None
+__blacklist = ["constructor", "namespace"]
 
 # @__parametrized
 # No parameterization when using one parameter
@@ -112,10 +116,13 @@ def PythonPP(cls):
     staticPrivateScope = ContainerWrapper(Container())
     staticPublicScope = ContainerWrapper(cls)
 
-    def __init__(self, *args, **kwargs):
+    def __init__(firstArg, *args, **kwargs):
+        # firstArg is self if bottom level is not set
+        # firstArg may not be self otherwise
         global __customConstructor, __publicScope, __privateScope, __bottomLevel
+        nonlocal staticPublicScope, staticPrivateScope
         if __bottomLevel == None:
-            __publicScope = Scope(self, staticPublicScope)
+            __publicScope = Scope(firstArg, staticPublicScope)
             __privateScope = Scope(ContainerWrapper(Container()), staticPrivateScope)
             __bottomLevel = cls
         for base in cls.__bases__:
@@ -140,11 +147,29 @@ def PythonPP(cls):
 
         cls.__getattribute__ = __getattribute__
         cls.__setattr__ = __setattr__
-
-        if len(inspect.signature(__customConstructor).parameters) == len(args) + 1:
-            __customConstructor(self, *args, **kwargs)
+        """
+        argLength = len(inspect.signature(__customConstructor).parameters)
+        requiredArgs = len(args)
+        if argLength == requiredArgs + 1:
+            if isinstance(firstArg, cls):
+                warnings.warn(
+                    f"The first argument specified, {firstArg}, is an instance of {cls}. "
+                    + "Check your constructor's arguments to make sure you are passing "
+                    + "the correct number of arguments.",
+                    RuntimeWarning,
+                )
+            __customConstructor(firstArg, *args, **kwargs)
+        elif argLength == requiredArgs:
         else:
+            raise TypeError("Your constructor arguments did not match.")
+        """
+        if __customConstructor.__name__ is cls.__name__:
             __customConstructor(*args, **kwargs)
+        else:
+            raise RuntimeError(
+                f"The constructor for \"{cls.__name__}\" must match the class name."
+            )
+
         if cls == __bottomLevel:
             __publicScope = None
             __privateScope = None
@@ -152,6 +177,12 @@ def PythonPP(cls):
             __customConstructor = __empty
 
     cls.__init__ = __init__
+
+    def staticConstructor(*args, **kwargs):
+        nonlocal staticPublicScope
+        cls.__init__(staticPublicScope, *args, **kwargs)
+
+    cls.constructor = staticConstructor
 
     cls.namespace(
         Scope(Container(), staticPublicScope), Scope(Container(), staticPrivateScope)
@@ -173,6 +204,8 @@ def method(func, cls):
 
     :param cls - the scope which the method is exposed to
     """
+    if func.__name__ in __blacklist:
+        raise AttributeError(f'Methods cannot be named "{func.__name__}".')
     setattr(cls, func.__name__, func)
 
     def inner(*args, **kwargs):
