@@ -1,10 +1,7 @@
-import types
 import functools
-import sys
 import inspect
-import warnings
-
-warnings.simplefilter("always")
+import sys
+import types
 
 
 def __parametrized(dec):
@@ -29,7 +26,7 @@ __privateScope = None
 __bottomLevel = None
 __namespacing = None
 __isStaticContainer = __empty
-__BLACKLIST = ["constructor", "namespace", "method", "static"]
+__BLACKLIST = {"constructor", "namespace", "method", "static"}
 
 # @__parametrized
 # No parameterization when using one parameter
@@ -83,6 +80,9 @@ def PythonPP(cls):
     """
     global __BLACKLIST
 
+    # Adding stuff to the current scope to speed up lookup times
+    globs = globals
+
     class Container:
         pass
 
@@ -99,8 +99,8 @@ def PythonPP(cls):
             )
 
         def __setattr__(self, name, value):
-            if name in globals()["__BLACKLIST"]:
-                raise AttributeError(f'Methods and variables cannot be named "{name}".')
+            if name in globs()["__BLACKLIST"]:
+                raise AttributeError('Methods and variables cannot be named "{name}".'.format(name=name))
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
     class ContainerWrapper:
@@ -117,7 +117,7 @@ def PythonPP(cls):
         permitted = name.startswith("__") and name.endswith("__")
         if (not permitted) and hasattr(cls, name):
             raise AttributeError(
-                f'Access to static variable or method "{name}" from an instance is not permitted.'
+                'Access to static variable or method "{name}" from an instance is not permitted.'.format(name=name)
             )
 
     class StaticContainerWrapper(ContainerWrapper):
@@ -145,7 +145,7 @@ def PythonPP(cls):
         # firstArg may not be self otherwise
         global __customConstructor, __publicScope, __privateScope, __bottomLevel, __namespacing, __isStaticContainer
         nonlocal staticPublicScope, staticPrivateScope, isStaticContainer
-        if __bottomLevel == None:
+        if __bottomLevel is None:
             __publicScope = Scope(firstArg, staticPublicScope)
             __privateScope = Scope(ContainerWrapper(Container()), staticPrivateScope)
             __bottomLevel = cls
@@ -185,11 +185,11 @@ def PythonPP(cls):
         else:
             raise TypeError("Your constructor arguments did not match.")
         """
-        if __customConstructor.__name__ is cls.__name__:
+        if __customConstructor.__name__ == cls.__name__:
             __customConstructor(*args, **kwargs)
         else:
             raise AttributeError(
-                f'The constructor for "{cls.__name__}" must match the class name.'
+                'The constructor for "{clsname}" must match the class name.'.format(clsname=cls.__name__)
             )
 
         if cls == __bottomLevel:
@@ -229,10 +229,10 @@ def method(func, cls):
     """
     global __namespacing, __BLACKLIST
     if func.__name__ in __BLACKLIST:
-        raise AttributeError(f'Methods cannot be named "{func.__name__}".')
-    elif func.__name__ is __namespacing.__qualname__:
+        raise AttributeError('Methods cannot be named "{funcname}".'.format(funcname=func.__name__))
+    elif func.__name__ == __namespacing.__qualname__:
         raise AttributeError(
-            f'The method name "{func.__name__}" is reserved for the constructor.'
+            'The method name "{funcname}" is reserved for the constructor.'.format(funcname=func.__name__)
         )
     if not __isStaticContainer(cls):
         setattr(cls, func.__name__, func)
