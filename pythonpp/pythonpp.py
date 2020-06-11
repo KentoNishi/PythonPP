@@ -28,6 +28,7 @@ __publicScope = None
 __privateScope = None
 __bottomLevel = None
 __namespacing = None
+__isStaticContainer = __empty
 __BLACKLIST = ["constructor", "namespace", "method", "static"]
 
 # @__parametrized
@@ -117,26 +118,37 @@ def PythonPP(cls):
                 f'Access to static variable or method "{name}" from an instance is not permitted.'
             )
 
-    staticPrivateScope = ContainerWrapper(Container())
-    staticPublicScope = ContainerWrapper(cls)
+    class StaticContainerWrapper(ContainerWrapper):
+        pass
+
+    staticPrivateScope = StaticContainerWrapper(Container())
+    staticPublicScope = StaticContainerWrapper(cls)
+
+    def recursivelyInitNamespace(public, private):
+        global __namespacing
+        for base in cls.__bases__:
+            if hasattr(base, "namespace"):
+                __namespacing = base
+                base.namespace(public, private)
+                __namespacing = None
+        __namespacing = cls
+        cls.namespace(public, private)
+        __namespacing = None
+
+    def isStaticContainer(scope):
+        return isinstance(scope, StaticContainerWrapper)
 
     def __init__(firstArg, *args, **kwargs):
         # firstArg is self if bottom level is not set
         # firstArg may not be self otherwise
-        global __customConstructor, __publicScope, __privateScope, __bottomLevel, __namespacing
-        nonlocal staticPublicScope, staticPrivateScope
+        global __customConstructor, __publicScope, __privateScope, __bottomLevel, __namespacing, __isStaticContainer
+        nonlocal staticPublicScope, staticPrivateScope, isStaticContainer
         if __bottomLevel == None:
             __publicScope = Scope(firstArg, staticPublicScope)
             __privateScope = Scope(ContainerWrapper(Container()), staticPrivateScope)
             __bottomLevel = cls
-        for base in cls.__bases__:
-            if hasattr(base, "namespace"):
-                __namespacing = base
-                base.namespace(__publicScope, __privateScope)
-                __namespacing = None
-        __namespacing = cls
-        cls.namespace(__publicScope, __privateScope)
-        __namespacing = None
+            __isStaticContainer = isStaticContainer
+        recursivelyInitNamespace(__publicScope, __privateScope)
 
         copiedGetAttribute = __copyMethod(cls.__getattribute__)
         copiedSetAttribute = __copyMethod(cls.__setattr__)
@@ -183,6 +195,7 @@ def PythonPP(cls):
             __privateScope = None
             __bottomLevel = None
             __customConstructor = __empty
+            __isStaticContainer = __empty
 
     cls.__init__ = __init__
 
@@ -192,12 +205,9 @@ def PythonPP(cls):
 
     cls.constructor = staticConstructor
 
-    global __namespacing
-    __namespacing = cls
-    cls.namespace(
-        Scope(Container(), staticPublicScope), Scope(Container(), staticPrivateScope)
+    recursivelyInitNamespace(
+        Scope(Container(), staticPublicScope), Scope(Container(), staticPrivateScope),
     )
-    __namespacing = None
 
     return cls
 
@@ -222,7 +232,8 @@ def method(func, cls):
         raise AttributeError(
             f'The method name "{func.__name__}" is reserved for the constructor.'
         )
-    setattr(cls, func.__name__, func)
+    if not __isStaticContainer(cls):
+        setattr(cls, func.__name__, func)
 
     def inner(*args, **kwargs):
         return func(*args, **kwargs)
