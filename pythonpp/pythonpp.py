@@ -94,7 +94,9 @@ def PythonPP(cls):
         def __getattribute__(self, name):
             if name == "static":
                 return object.__getattribute__(self, "static")
-            return object.__getattribute__(self, "instance").__getattribute__(name)
+            return object.__getattribute__(
+                object.__getattribute__(self, "instance"), name
+            )
 
         def __setattr__(self, name, value):
             if name in globals()["__BLACKLIST"]:
