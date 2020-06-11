@@ -104,7 +104,9 @@ def PythonPP(cls):
 
         def __setattr__(self, name, value):
             if name in globs()["__BLACKLIST"]:
-                raise AttributeError('Methods and variables cannot be named "{name}".'.format(name=name))
+                raise AttributeError(
+                    'Methods and variables cannot be named "{name}".'.format(name=name)
+                )
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
     class ContainerWrapper:
@@ -121,7 +123,9 @@ def PythonPP(cls):
         permitted = name.startswith("__") and name.endswith("__")
         if (not permitted) and hasattr(cls, name):
             raise AttributeError(
-                'Access to static variable or method "{name}" from an instance is not permitted.'.format(name=name)
+                'Access to static variable or method "{name}" from an instance is not permitted.'.format(
+                    name=name
+                )
             )
 
     class StaticContainerWrapper(ContainerWrapper):
@@ -130,11 +134,19 @@ def PythonPP(cls):
     static_private_scope = StaticContainerWrapper(Container())
     static_public_scope = StaticContainerWrapper(cls)
 
+    def getStaticConstructor(theClass):
+        def static_constructor(*args, **kwargs):
+            nonlocal static_public_scope
+            theClass.__init__(static_public_scope, *args, **kwargs)
+
+        return static_constructor
+
     def recursivelyInitNamespace(public, private):
         global __namespacing
         for base in cls.__bases__:
             if hasattr(base, "namespace"):
                 __namespacing = base
+                base.constructor = getStaticConstructor(base)
                 base.namespace(public, private)
                 __namespacing = None
         __namespacing = cls
@@ -147,8 +159,10 @@ def PythonPP(cls):
     def __init__(firstArg, *args, **kwargs):
         # firstArg is self if bottom level is not set
         # firstArg may not be self otherwise
+
         global __customConstructor, __publicScope, __privateScope, __bottomLevel, __namespacing, __isStaticContainer
         nonlocal static_public_scope, static_private_scope, isStaticContainer
+
         if __bottomLevel is None:
             __publicScope = Scope(firstArg, static_public_scope)
             __privateScope = Scope(ContainerWrapper(Container()), static_private_scope)
@@ -173,28 +187,16 @@ def PythonPP(cls):
 
         cls.__getattribute__ = __getattribute__
         cls.__setattr__ = __setattr__
-        """
-        argLength = len(inspect.signature(__customConstructor).parameters)
-        requiredArgs = len(args)
-        if argLength == requiredArgs + 1:
-            if isinstance(firstArg, cls):
-                warnings.warn(
-                    (f"The first argument specified, {firstArg}, is an instance of {cls}. "
-                      "Check your constructor's arguments to make sure you are passing "
-                      "the correct number of arguments."),
-                    RuntimeWarning,
-                )
-            __customConstructor(firstArg, *args, **kwargs)
-        elif argLength == requiredArgs:
-        else:
-            raise TypeError("Your constructor arguments did not match.")
-        """
         if __customConstructor.__name__ == cls.__name__:
             __customConstructor(*args, **kwargs)
         else:
             raise AttributeError(
-                'The constructor for "{clsname}" must match the class name.'.format(clsname=cls.__name__)
+                'The constructor for "{clsname}" must match the class name.'.format(
+                    clsname=cls.__name__
+                )
             )
+        if hasattr(cls, "constructor"):
+            del cls.constructor
 
         if cls == __bottomLevel:
             __publicScope = None
@@ -205,14 +207,9 @@ def PythonPP(cls):
 
     cls.__init__ = __init__
 
-    def static_constructor(*args, **kwargs):
-        nonlocal static_public_scope
-        cls.__init__(static_public_scope, *args, **kwargs)
-
-    cls.constructor = static_constructor
-
     recursivelyInitNamespace(
-        Scope(Container(), static_public_scope), Scope(Container(), static_private_scope),
+        Scope(Container(), static_public_scope),
+        Scope(Container(), static_private_scope),
     )
 
     return cls
@@ -236,10 +233,14 @@ def method(func, cls):
     """
     global __namespacing, __BLACKLIST
     if func.__name__ in __BLACKLIST:
-        raise AttributeError('Methods cannot be named "{funcname}".'.format(funcname=func.__name__))
+        raise AttributeError(
+            'Methods cannot be named "{funcname}".'.format(funcname=func.__name__)
+        )
     elif func.__name__ == __namespacing.__qualname__:
         raise AttributeError(
-            'The method name "{funcname}" is reserved for the constructor.'.format(funcname=func.__name__)
+            'The method name "{funcname}" is reserved for the constructor.'.format(
+                funcname=func.__name__
+            )
         )
     if not __isStaticContainer(cls):
         setattr(cls, func.__name__, func)
