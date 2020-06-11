@@ -156,37 +156,30 @@ def PythonPP(cls):
     def isStaticContainer(scope):
         return isinstance(scope, StaticContainerWrapper)
 
-    def __init__(firstArg, *args, **kwargs):
-        # firstArg is self if bottom level is not set
-        # firstArg may not be self otherwise
-
+    def __init__(self, *args, **kwargs):
         global __customConstructor, __publicScope, __privateScope, __bottomLevel, __namespacing, __isStaticContainer
         nonlocal static_public_scope, static_private_scope, isStaticContainer
 
         if __bottomLevel is None:
-            __publicScope = Scope(firstArg, static_public_scope)
+            __publicScope = Scope(self, static_public_scope)
             __privateScope = Scope(ContainerWrapper(Container()), static_private_scope)
             __bottomLevel = cls
             __isStaticContainer = isStaticContainer
         recursivelyInitNamespace(__publicScope, __privateScope)
 
-        copied_get_attribute = __copy_method(cls.__getattribute__)
-        copied_set_attribute = __copy_method(cls.__setattr__)
-
         def __getattribute__(self, name):
-            nonlocal copied_get_attribute
             blockStatic(name)
-            copied_get_attribute(self, name)
+            # copied_get_attribute(self, name)
             return object.__getattribute__(self, name)
 
         def __setattr__(self, name, value):
-            nonlocal copied_set_attribute
             blockStatic(name)
-            copied_set_attribute(self, name, value)
+            # copied_set_attribute(self, name, value)
+            print("Setting attribute", name)
+            if name == "__str__":
+                print("IT'S SETTING __STR__!")
             return object.__setattr__(self, name, value)
 
-        cls.__getattribute__ = __getattribute__
-        cls.__setattr__ = __setattr__
         if __customConstructor.__name__ == cls.__name__:
             __customConstructor(*args, **kwargs)
         else:
@@ -204,6 +197,29 @@ def PythonPP(cls):
             __bottomLevel = None
             __customConstructor = __empty
             __isStaticContainer = __empty
+
+            for method in dir(self):
+                if not (method.startswith("__") and method.endswith("__")):
+                    continue
+
+                instanceMethod = object.__getattribute__(self, method)
+
+                def getReplacement(theMethod):
+                    def replacementInternal(self, *arg, **kwarg):
+                        return theMethod(*arg, **kwarg)
+
+                    return replacementInternal
+
+                if type(instanceMethod) is not type(__empty):
+                    continue
+
+                setattr(
+                    cls, method, getReplacement(instanceMethod),
+                )
+
+        print(cls.__str__)
+        cls.__getattribute__ = __getattribute__
+        cls.__setattr__ = __setattr__
 
     cls.__init__ = __init__
 
@@ -242,6 +258,7 @@ def method(func, cls):
                 funcname=func.__name__
             )
         )
+
     if not __isStaticContainer(cls):
         setattr(cls, func.__name__, func)
 
