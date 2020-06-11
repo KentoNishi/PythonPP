@@ -36,18 +36,20 @@ def constructor(func):
     The decorator does not take any arguments.
     The scope is assumed to be a public instance method.
 
-    Example:
+    ### Example:
     
+    ```python
     @constructor
     def __init__(variable1, variable2):
         private.variable1 = variable1
         private.static.variable2 = variable2
+    ```
     """
     global __customConstructor
     __customConstructor = func
 
 
-def __copyMethod(f):
+def __copy_method(f):
     """
     Creates a clone of a given method.
     """
@@ -71,12 +73,14 @@ def PythonPP(cls):
     The class wrapper to create Python++ objects.
     Use this decorator on a class to declare it as a Python++ class.
 
-    Example:
+    ### Example:
 
+    ```python
     @PythonPP
     class Test:
         def namespace(public, private):
             public.static.testVariable = "Hello World!"
+    ```
     """
     global __BLACKLIST
 
@@ -123,8 +127,8 @@ def PythonPP(cls):
     class StaticContainerWrapper(ContainerWrapper):
         pass
 
-    staticPrivateScope = StaticContainerWrapper(Container())
-    staticPublicScope = StaticContainerWrapper(cls)
+    static_private_scope = StaticContainerWrapper(Container())
+    static_public_scope = StaticContainerWrapper(cls)
 
     def recursivelyInitNamespace(public, private):
         global __namespacing
@@ -144,27 +148,27 @@ def PythonPP(cls):
         # firstArg is self if bottom level is not set
         # firstArg may not be self otherwise
         global __customConstructor, __publicScope, __privateScope, __bottomLevel, __namespacing, __isStaticContainer
-        nonlocal staticPublicScope, staticPrivateScope, isStaticContainer
+        nonlocal static_public_scope, static_private_scope, isStaticContainer
         if __bottomLevel is None:
-            __publicScope = Scope(firstArg, staticPublicScope)
-            __privateScope = Scope(ContainerWrapper(Container()), staticPrivateScope)
+            __publicScope = Scope(firstArg, static_public_scope)
+            __privateScope = Scope(ContainerWrapper(Container()), static_private_scope)
             __bottomLevel = cls
             __isStaticContainer = isStaticContainer
         recursivelyInitNamespace(__publicScope, __privateScope)
 
-        copiedGetAttribute = __copyMethod(cls.__getattribute__)
-        copiedSetAttribute = __copyMethod(cls.__setattr__)
+        copied_get_attribute = __copy_method(cls.__getattribute__)
+        copied_set_attribute = __copy_method(cls.__setattr__)
 
         def __getattribute__(self, name):
-            nonlocal copiedGetAttribute
+            nonlocal copied_get_attribute
             blockStatic(name)
-            copiedGetAttribute(self, name)
+            copied_get_attribute(self, name)
             return object.__getattribute__(self, name)
 
         def __setattr__(self, name, value):
-            nonlocal copiedSetAttribute
+            nonlocal copied_set_attribute
             blockStatic(name)
-            copiedSetAttribute(self, name, value)
+            copied_set_attribute(self, name, value)
             return object.__setattr__(self, name, value)
 
         cls.__getattribute__ = __getattribute__
@@ -175,9 +179,9 @@ def PythonPP(cls):
         if argLength == requiredArgs + 1:
             if isinstance(firstArg, cls):
                 warnings.warn(
-                    f"The first argument specified, {firstArg}, is an instance of {cls}. "
-                    + "Check your constructor's arguments to make sure you are passing "
-                    + "the correct number of arguments.",
+                    (f"The first argument specified, {firstArg}, is an instance of {cls}. "
+                      "Check your constructor's arguments to make sure you are passing "
+                      "the correct number of arguments."),
                     RuntimeWarning,
                 )
             __customConstructor(firstArg, *args, **kwargs)
@@ -201,14 +205,14 @@ def PythonPP(cls):
 
     cls.__init__ = __init__
 
-    def staticConstructor(*args, **kwargs):
-        nonlocal staticPublicScope
-        cls.__init__(staticPublicScope, *args, **kwargs)
+    def static_constructor(*args, **kwargs):
+        nonlocal static_public_scope
+        cls.__init__(static_public_scope, *args, **kwargs)
 
-    cls.constructor = staticConstructor
+    cls.constructor = static_constructor
 
     recursivelyInitNamespace(
-        Scope(Container(), staticPublicScope), Scope(Container(), staticPrivateScope),
+        Scope(Container(), static_public_scope), Scope(Container(), static_private_scope),
     )
 
     return cls
@@ -219,13 +223,16 @@ def method(func, cls):
     """
     Used to expose methods to a particular scope
 
-    Example use case:
+    ### Example use case:
+
+    ```python
     @method(public)
     def publicmethod(*args, **kwargs):
         for arg in args:
             print(arg)
+    ```
 
-    :param cls - the scope which the method is exposed to
+    :``param cls`` - the scope which the method is exposed to
     """
     global __namespacing, __BLACKLIST
     if func.__name__ in __BLACKLIST:
