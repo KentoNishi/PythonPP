@@ -170,13 +170,15 @@ def PythonPP(cls):
         return static_constructor
 
     def recursivelyInitNamespace(public, private):
-        global __namespacing
+        global __namespacing, __customConstructor
         for base in cls.__bases__:
             if hasattr(base, "namespace"):
                 __namespacing = base
                 base.constructor = getStaticConstructor(base)
                 base.namespace(public, private)
+                del base.constructor
                 __namespacing = None
+                __customConstructor = __empty
         __namespacing = cls
         cls.namespace(public, private)
         __namespacing = None
@@ -193,6 +195,7 @@ def PythonPP(cls):
             __privateScope = Scope(ContainerWrapper(Container()), static_private_scope)
             __bottomLevel = cls
             __isStaticContainer = isStaticContainer
+            __customConstructor = __empty
         recursivelyInitNamespace(__publicScope, __privateScope)
 
         def __getattribute__(self, name):
@@ -202,13 +205,11 @@ def PythonPP(cls):
 
         def __setattr__(self, name, value):
             blockStatic(name)
-            # copied_set_attribute(self, name, value)
-            print("Setting attribute", name)
-            if name == "__str__":
-                print("IT'S SETTING __STR__!")
             return object.__setattr__(self, name, value)
 
-        if __customConstructor.__name__ == cls.__name__:
+        if __customConstructor is __empty:
+            pass
+        elif __customConstructor.__name__ == cls.__name__:
             __customConstructor(*args, **kwargs)
         else:
             raise AttributeError(
@@ -216,14 +217,11 @@ def PythonPP(cls):
                     clsname=cls.__name__
                 )
             )
-        if hasattr(cls, "constructor"):
-            del cls.constructor
 
         if cls == __bottomLevel:
             __publicScope = None
             __privateScope = None
             __bottomLevel = None
-            __customConstructor = __empty
             __isStaticContainer = __empty
 
         cls.__getattribute__ = __getattribute__
