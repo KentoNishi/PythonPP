@@ -35,31 +35,42 @@ class NewTest:
         def top_secret():
             return private.name * private.level * 2
 
-        @method(public)
+        @builtin
         def __call__():
             return private.top_secret()
 
-        @method(public)
+        @builtin
         def __str__():
             return "{name} is at level {level}".format(
                 name=private.name,
                 level=private.level
             )
 
-def benchmark():
-    obj = NewTest("steven", 10)
-    assert obj.get_name() == "steven"
-    assert obj.get_level() == 10
+# def benchmark():
+#     obj = NewTest("steven", 10)
+#     assert obj.get_name() == "steven"
+#     assert obj.get_level() == 10
+#     obj.set_name("Steven")
+#     obj.set_level(11)
+#     assert obj.get_name() == "Steven"
+#     assert obj.get_level() == 11
+#     assert obj() == "Steven"*22
+#     assert str(obj) == "Steven is at level 11"
+
+obj = NewTest("steven", 10)
+def benchmark_no_assert(v):
+    obj.get_name()
+    obj.get_level()
     obj.set_name("Steven")
     obj.set_level(11)
-    assert obj.get_name() == "Steven"
-    assert obj.get_level() == 11
-    assert obj() == "Steven"*22
-    assert str(obj) == "Steven is at level 11"
+    obj.get_name()
+    obj.get_level()
+    obj()
+    str(obj)
 
 if __name__ == "__main__":
     NUM_ITERATIONS = 100000
     beg = time.time()
     for _ in range(NUM_ITERATIONS):
-        benchmark()
+        benchmark_no_assert("re")
     print(time.time() - beg, "seconds")

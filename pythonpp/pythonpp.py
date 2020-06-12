@@ -49,6 +49,37 @@ def constructor(func):
     __customConstructor = func
 
 
+# No parameterization when using one parameter
+# __add__ has two, self and other
+# ah crap
+# we have to add *arg and **kwarg then
+# already have
+# nvm im dumb i think this'll work
+def builtin(func):
+    assert func.__name__.startswith("__") and func.__name__.endswith(
+        "__"
+    ), "The method specified must be a builtin method."
+
+    global __namespacing
+
+    def getReplacement(theMethod):
+        def replacementInternal(self, *args, **kwargs):
+            return theMethod(*args, **kwargs)
+
+        return replacementInternal
+
+    setattr(
+        __namespacing, func.__name__, getReplacement(func),
+    )
+
+    # is this is? or do we need parametrize
+    # cause __add__ is __add__(self, other)
+    # right we might need to do that
+    # but wait
+    # No parameterization when using one parameter
+    # for @constructor
+
+
 def __copy_method(f):
     """
     Creates a clone of a given method.
@@ -198,26 +229,6 @@ def PythonPP(cls):
             __customConstructor = __empty
             __isStaticContainer = __empty
 
-            for method in dir(self):
-                if not (method.startswith("__") and method.endswith("__")):
-                    continue
-
-                instanceMethod = object.__getattribute__(self, method)
-
-                def getReplacement(theMethod):
-                    def replacementInternal(self, *arg, **kwarg):
-                        return theMethod(*arg, **kwarg)
-
-                    return replacementInternal
-
-                if type(instanceMethod) is not type(__empty):
-                    continue
-
-                setattr(
-                    cls, method, getReplacement(instanceMethod),
-                )
-
-        print(cls.__str__)
         cls.__getattribute__ = __getattribute__
         cls.__setattr__ = __setattr__
 
