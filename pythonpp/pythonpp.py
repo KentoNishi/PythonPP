@@ -176,7 +176,6 @@ def PythonPP(cls):
                 __namespacing = base
                 base.constructor = getStaticConstructor(base)
                 base.namespace(public, private)
-                del base.constructor
                 __namespacing = None
                 __customConstructor = __empty
         __namespacing = cls
@@ -226,6 +225,10 @@ def PythonPP(cls):
 
         cls.__getattribute__ = __getattribute__
         cls.__setattr__ = __setattr__
+
+        for base in cls.__bases__:
+            if hasattr(base, "constructor"):
+                del base.constructor
 
     cls.__init__ = __init__
 
