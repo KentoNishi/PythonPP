@@ -1,4 +1,8 @@
+import os
 import time
+from multiprocessing import Process
+import pickle
+from threading import Thread
 
 from pythonpp import PythonPP, method, constructor, special
 
@@ -69,6 +73,37 @@ class NewTest:
                 level=private.level
             )
 
+        @special
+        def __getstate__():
+            return public.publicvar, private.name, private.level
+
+        @special
+        def __setstate__(state):
+            public.publicvar, private.name, private.level = state
+
+class ThreadTask:
+    def __init__(self, lock_file_name):
+        self.lock_file_name = lock_file_name
+
+    def __call__(self, obj):
+        while self.lock_file_name not in os.listdir():
+            pass
+        for _ in range(100):
+            benchmark(obj)
+
+    def __getstate__(self):
+        return (self.lock_file_name,)
+
+    def __setstate__(self, state):
+        self.lock_file_name = state[0]
+
+class ThreadCreationTask(ThreadTask):
+    def __call__(self):
+        while self.lock_file_name not in os.listdir():
+            pass
+        for _ in range(100):
+            benchmark()
+
 obj = None
 
 def test_creation():
@@ -106,8 +141,63 @@ def test_private_static_encapsulation():
 def test_private_static_getter():
     assert NewTest.get_private_static_variable() == 19
 
-def benchmark():
-    obj = NewTest("steven", 10)
+def test_modify_static_var():
+    NewTest.pubstat = 1000
+    assert NewTest.pubstat == 1000
+    yeeter = NewTest("Esteban", 9)
+    assert NewTest.pubstat == 1000, "Object instanciation overrides static vars"
+
+def test_creation_multithreading():
+    lock_file_name = "start.lock"
+    def thread_task():
+        while lock_file_name not in os.listdir():
+            pass
+        for _ in range(100):
+            benchmark()
+
+    threads = [Thread(target=thread_task, daemon=True) for _ in range(os.cpu_count())]
+    for thread in threads:
+        thread.start()
+
+    open(lock_file_name, 'w+').close()
+
+    for thread in threads:
+        thread.join()
+
+    os.remove(lock_file_name)
+
+def test_creation_multiprocessing():
+    lock_file_name = "start.lock"
+
+    threads = [Process(target=ThreadCreationTask(lock_file_name)) for _ in range(os.cpu_count())]
+    for thread in threads:
+        thread.start()
+
+    open(lock_file_name, 'w+').close()
+
+    for thread in threads:
+        thread.join()
+
+    os.remove(lock_file_name)
+
+def test_argument_multiprocessing():
+    lock_file_name = "start.lock"
+
+    processes = [Process(target=ThreadTask(lock_file_name), args=(NewTest("steven", 10),)) 
+                for _ in range(os.cpu_count())]
+    
+    for process in processes:
+        process.start()
+
+    open(lock_file_name, 'w+').close()
+
+    for process in processes:
+        process.join()
+
+    os.remove(lock_file_name)
+
+
+def benchmark(obj = NewTest("steven", 10)):
     assert obj.get_name() == "steven"
     assert obj.get_level() == 10
     obj.set_name("Steven")
@@ -116,6 +206,17 @@ def benchmark():
     assert obj.get_level() == 11
     assert obj() == "Steven"*22
     assert str(obj) == "Steven is at level 11"
+    assert not hasattr(obj, "private")
+    assert not hasattr(obj, "name")
+    assert obj.publicvar == 1
+    assert NewTest.get_max_level() == 12
+    assert not hasattr(NewTest, "get_secret_key")
+    assert NewTest.get_private_static_variable() == 19
+    NewTest.pubstat = 1000
+    assert NewTest.pubstat == 1000
+    yeeter = NewTest("Esteban", 9)
+    assert NewTest.pubstat == 1000, "Object instanciation overrides static vars"
+
 
 # obj = NewTest("steven", 10)
 # def benchmark_no_assert(v):
