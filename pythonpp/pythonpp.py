@@ -26,6 +26,7 @@ __privateScope = None
 __bottomLevel = None
 __namespacing = None
 __isStaticContainer = __empty
+__staticNamespacing = False
 __BLACKLIST = {
     "constructor",
     "namespace",
@@ -118,7 +119,7 @@ def PythonPP(cls):
             public.static.testVariable = "Hello World!"
     ```
     """
-    global __BLACKLIST
+    global __BLACKLIST, __staticNamespacing
 
     # Adding stuff to the current scope to speed up lookup times
     globs = globals
@@ -134,6 +135,10 @@ def PythonPP(cls):
         def __getattribute__(self, name):
             if name == "static":
                 return object.__getattribute__(self, "static")
+            if object.__getattribute__(self, "instance") is None:
+                raise AttributeError(
+                    "Variables and methods cannot be retrieved because the instance scope is empty."
+                )
             return object.__getattribute__(
                 object.__getattribute__(self, "instance"), name
             )
@@ -142,6 +147,10 @@ def PythonPP(cls):
             if name in globs()["__BLACKLIST"]:
                 raise AttributeError(
                     'Methods and variables cannot be named "{name}".'.format(name=name)
+                )
+            if object.__getattribute__(self, "instance") is None:
+                raise AttributeError(
+                    "Variables and methods cannot be created because the instance scope is empty."
                 )
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
@@ -165,7 +174,19 @@ def PythonPP(cls):
             )
 
     class StaticContainerWrapper(ContainerWrapper):
-        pass
+        def __getattribute__(self, name):
+            if (globs()["__bottomLevel"] is not None) and not globs()[
+                "__staticNamespacing"
+            ]:
+                return
+            return super().__getattribute__(name)
+
+        def __setattr__(self, name, value):
+            if (globs()["__bottomLevel"] is not None) and not globs()[
+                "__staticNamespacing"
+            ]:
+                return
+            return super().__setattr__(name, value)
 
     static_private_scope = StaticContainerWrapper(Container())
     static_public_scope = StaticContainerWrapper(cls)
@@ -240,10 +261,11 @@ def PythonPP(cls):
 
     cls.__init__ = __init__
 
+    __staticNamespacing = True
     recursivelyInitNamespace(
-        Scope(Container(), static_public_scope),
-        Scope(Container(), static_private_scope),
+        Scope(None, static_public_scope), Scope(None, static_private_scope),
     )
+    __staticNamespacing = False
 
     return cls
 
@@ -283,7 +305,10 @@ def method(func, cls):
             ).format(funcname=func.__name__)
         )
     if not __isStaticContainer(cls):
-        setattr(cls, func.__name__, func)
+        try:
+            setattr(cls, func.__name__, func)
+        except AttributeError:
+            pass
 
     def inner(*args, **kwargs):
         return func(*args, **kwargs)
