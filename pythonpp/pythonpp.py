@@ -34,7 +34,7 @@ __BLACKLIST = {
     "public",
     "private",
     "method",
-    "builtin",
+    "special",
 }
 
 # @__parametrized
@@ -58,13 +58,21 @@ def constructor(func):
     __customConstructor = func
 
 
-def __is_builtin(name):
+def __is_special(name):
     return name.startswith("__") and name.endswith("__")
 
 
-def builtin(func):
+def special(func):
 
     global __namespacing
+
+    if not __is_special(func.__name__):
+        raise AttributeError(
+            (
+                'The function "{methodName}" is not a built in function. '
+                + 'Use "__" before and after the method name to declare it as a special method.'
+            ).format(methodName=func.__name__)
+        )
 
     def getReplacement(theMethod):
         def replacementInternal(self, *args, **kwargs):
@@ -73,7 +81,7 @@ def builtin(func):
         return replacementInternal
 
     setattr(
-        __namespacing, "__" + func.__name__ + "__", getReplacement(func),
+        __namespacing, func.__name__, getReplacement(func),
     )
 
 
@@ -148,7 +156,7 @@ def PythonPP(cls):
             return setattr(object.__getattribute__(self, "container"), name, value)
 
     def blockStatic(name):
-        permitted = __is_builtin(name)
+        permitted = __is_special(name)
         if (not permitted) and hasattr(cls, name):
             raise AttributeError(
                 'Access to static variable or method "{name}" from an instance is not permitted.'.format(
@@ -267,11 +275,11 @@ def method(func, cls):
                 funcname=func.__name__
             )
         )
-    elif __is_builtin(func.__name__):
+    elif __is_special(func.__name__):
         raise AttributeError(
             (
                 'The method name "{funcname}" starts and ends with "__". '
-                + "Such method names are reserved for built in methods created with @builtin."
+                + "Such method names are reserved for special methods created with @special."
             ).format(funcname=func.__name__)
         )
     if not __isStaticContainer(cls):
