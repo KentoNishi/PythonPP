@@ -19,6 +19,7 @@ def __parametrized(dec):
 
 
 __empty = lambda *args, **kwargs: None
+__staticNamespacing = False
 
 __customConstructor = __empty
 __publicScope = None
@@ -118,7 +119,9 @@ def PythonPP(cls):
             public.static.testVariable = "Hello World!"
     ```
     """
-    global __BLACKLIST
+    global __BLACKLIST, __staticNamespacing
+
+    __staticNamespacing = True
 
     # Adding stuff to the current scope to speed up lookup times
     globs = globals
@@ -167,6 +170,21 @@ def PythonPP(cls):
     class StaticContainerWrapper(ContainerWrapper):
         pass
 
+    class NullScope(Scope):
+        def __getattribute__(self, name):
+            raise AttributeError(
+                'Access to instance variable or method "{name}" from a static scope is not permitted.'.format(
+                    name=name
+                )
+            )
+
+        def __setattr__(self, name, value):
+            raise AttributeError(
+                'Setting instance variable or method "{name}" to value "{value}" from a static scope is not permitted'.format(
+                    name=name, value=value
+                )
+            )
+
     static_private_scope = StaticContainerWrapper(Container())
     static_public_scope = StaticContainerWrapper(cls)
 
@@ -178,7 +196,7 @@ def PythonPP(cls):
         return static_constructor
 
     def recursivelyInitNamespace(public, private):
-        global __namespacing, __customConstructor
+        global __namespacing, __customConstructor, __staticNamespacing
         for base in cls.__bases__:
             if hasattr(base, "namespace"):
                 __namespacing = base
@@ -189,6 +207,7 @@ def PythonPP(cls):
         __namespacing = cls
         cls.namespace(public, private)
         __namespacing = None
+        __staticNamespacing = False
 
     def isStaticContainer(scope):
         return isinstance(scope, StaticContainerWrapper)
@@ -203,7 +222,10 @@ def PythonPP(cls):
             __bottomLevel = cls
             __isStaticContainer = isStaticContainer
             __customConstructor = __empty
+        
+        
         recursivelyInitNamespace(__publicScope, __privateScope)
+        # __staticNamespacing = False
 
         def __getattribute__(self, name):
             blockStatic(name)
@@ -240,6 +262,7 @@ def PythonPP(cls):
 
     cls.__init__ = __init__
 
+    # TODO Still buggy
     recursivelyInitNamespace(
         Scope(Container(), static_public_scope),
         Scope(Container(), static_private_scope),
@@ -264,7 +287,7 @@ def method(func, cls):
 
     :``param cls`` - the scope which the method is exposed to
     """
-    global __namespacing, __BLACKLIST
+    global __namespacing, __BLACKLIST, __staticNamespacing
     if func.__name__ in __BLACKLIST:
         raise AttributeError(
             'Methods cannot be named "{funcname}".'.format(funcname=func.__name__)
@@ -279,11 +302,13 @@ def method(func, cls):
         raise AttributeError(
             (
                 'The method name "{funcname}" starts and ends with "__". '
-                + "Such method names are reserved for special methods created with @special."
+                "Such method names are reserved for special methods created with @special."
             ).format(funcname=func.__name__)
         )
-    if not __isStaticContainer(cls):
+    # TODO Still buggy
+    if not __isStaticContainer(cls): #and __staticNamespacing:
         setattr(cls, func.__name__, func)
+    # print("f u", func.__name__, __isStaticContainer(cls), __staticNamespacing)
 
     def inner(*args, **kwargs):
         return func(*args, **kwargs)
