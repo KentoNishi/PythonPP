@@ -1,6 +1,6 @@
 import time
 
-from pythonpp import *
+from pythonpp import PythonPP, method, constructor, special
 
 @PythonPP
 class NewTest:
