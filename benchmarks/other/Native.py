@@ -31,32 +31,32 @@ class NativeTest:
         return "{name} is at level {level}".format(name=self.__name, level=self.__level)
 
 
-def benchmark():
-    obj = NativeTest("steven", 10)
-    assert obj.get_name() == "steven"
-    assert obj.get_level() == 10
-    obj.set_name("Steven")
-    obj.set_level(11)
-    assert obj.get_name() == "Steven"
-    assert obj.get_level() == 11
-    assert obj() == "Steven" * 22
-    assert str(obj) == "Steven is at level 11"
-
-# obj = NativeTest("steven", 10)
-# def benchmark_no_assert(v):
-#     obj.get_name()
-#     obj.get_level()
+# def benchmark():
+#     obj = NativeTest("steven", 10)
+#     assert obj.get_name() == "steven"
+#     assert obj.get_level() == 10
 #     obj.set_name("Steven")
 #     obj.set_level(11)
-#     obj.get_name()
-#     obj.get_level()
-#     obj()
-#     str(obj)
+#     assert obj.get_name() == "Steven"
+#     assert obj.get_level() == 11
+#     assert obj() == "Steven" * 22
+#     assert str(obj) == "Steven is at level 11"
+
+obj = NativeTest("steven", 10)
+def benchmark_no_assert(v):
+    obj.get_name()
+    obj.get_level()
+    obj.set_name("Steven")
+    obj.set_level(11)
+    obj.get_name()
+    obj.get_level()
+    obj()
+    str(obj)
 
 
 if __name__ == "__main__":
     NUM_ITERATIONS = 100000
     beg = time.time()
     for _ in range(NUM_ITERATIONS):
-        benchmark()
+        benchmark_no_assert("re")
     print(time.time() - beg, "seconds")
