@@ -26,7 +26,16 @@ __privateScope = None
 __bottomLevel = None
 __namespacing = None
 __isStaticContainer = __empty
-__BLACKLIST = {"constructor", "namespace", "method", "static"}
+__BLACKLIST = {
+    "constructor",
+    "namespace",
+    "method",
+    "static",
+    "public",
+    "private",
+    "method",
+    "builtin",
+}
 
 # @__parametrized
 # No parameterization when using one parameter
@@ -49,16 +58,11 @@ def constructor(func):
     __customConstructor = func
 
 
-# No parameterization when using one parameter
-# __add__ has two, self and other
-# ah crap
-# we have to add *arg and **kwarg then
-# already have
-# nvm im dumb i think this'll work
+def __is_builtin(name):
+    return name.startswith("__") and name.endswith("__")
+
+
 def builtin(func):
-    assert func.__name__.startswith("__") and func.__name__.endswith(
-        "__"
-    ), "The method specified must be a builtin method."
 
     global __namespacing
 
@@ -69,15 +73,8 @@ def builtin(func):
         return replacementInternal
 
     setattr(
-        __namespacing, func.__name__, getReplacement(func),
+        __namespacing, "__" + func.__name__ + "__", getReplacement(func),
     )
-
-    # is this is? or do we need parametrize
-    # cause __add__ is __add__(self, other)
-    # right we might need to do that
-    # but wait
-    # No parameterization when using one parameter
-    # for @constructor
 
 
 def __copy_method(f):
@@ -151,7 +148,7 @@ def PythonPP(cls):
             return setattr(object.__getattribute__(self, "container"), name, value)
 
     def blockStatic(name):
-        permitted = name.startswith("__") and name.endswith("__")
+        permitted = __is_builtin(name)
         if (not permitted) and hasattr(cls, name):
             raise AttributeError(
                 'Access to static variable or method "{name}" from an instance is not permitted.'.format(
@@ -269,7 +266,13 @@ def method(func, cls):
                 funcname=func.__name__
             )
         )
-
+    elif __is_builtin(func.__name__):
+        raise AttributeError(
+            (
+                'The method name "{funcname}" starts and ends with "__". '
+                + "Such method names are reserved for built in methods created with @builtin."
+            ).format(funcname=func.__name__)
+        )
     if not __isStaticContainer(cls):
         setattr(cls, func.__name__, func)
 

@@ -36,18 +36,18 @@ class NewTest:
             return private.name * private.level * 2
 
         @method(public)
-        def __call__():
+        def call():
             return private.top_secret()
 
         @method(public)
-        def __str__():
+        def str():
             return "{name} is at level {level}".format(
                 name=private.name, level=private.level
             )
 
         @method(public)
-        def __repr__():
-            return public.__str__()
+        def repr():
+            return public.str()
 
 
 if __name__ == "__main__":

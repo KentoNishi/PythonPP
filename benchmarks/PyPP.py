@@ -36,11 +36,11 @@ class NewTest:
             return private.name * private.level * 2
 
         @builtin
-        def __call__():
+        def call():
             return private.top_secret()
 
         @builtin
-        def __str__():
+        def str():
             return "{name} is at level {level}".format(
                 name=private.name,
                 level=private.level
