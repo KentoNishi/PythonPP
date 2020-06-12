@@ -137,7 +137,7 @@ def PythonPP(cls):
                 return object.__getattribute__(self, "static")
             if object.__getattribute__(self, "instance") is None:
                 raise AttributeError(
-                    "Variables and methods cannot be retrieved because the instance scope is empty."
+                    "The variable or method cannot be retrieved because the instance scope is empty."
                 )
             return object.__getattribute__(
                 object.__getattribute__(self, "instance"), name
@@ -150,7 +150,7 @@ def PythonPP(cls):
                 )
             if object.__getattribute__(self, "instance") is None:
                 raise AttributeError(
-                    "Variables and methods cannot be created because the instance scope is empty."
+                    "The variable or method cannot be created because the instance scope is empty."
                 )
             object.__setattr__(object.__getattribute__(self, "instance"), name, value)
 
