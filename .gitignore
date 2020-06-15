@@ -2,3 +2,8 @@
 *~
 __pycache__/
 .vscode/
+test.py
+**/pythonpp.py
+!pythonpp/pythonpp.py
+start.lock
+test.pickle

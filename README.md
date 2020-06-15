@@ -1,216 +1,213 @@
 # Python++
-Python 3, but with proper encapsulation.
-
-## ⚠ WARNING ⚠
-**A major update is in development for Python++.**
-**We recommend that you wait until the next major release,**
-**as the majority of the library will be deprecated.**
+A robust Java-style OOP system for Python, with support for statics, encapsulation, and inheritance.
 
 [View on PyPI](https://pypi.org/project/pythonpp/)
-
-PythonPP stands for ***Python** **P**lus **P**lus*.
+/
+Built by
+[Kento Nishi](https://github.com/KentoNishi)
+and
+[Ronak Badhe](https://github.com/r2dev2bb8)
 
 Python++ allows Python programmers to use object oriented programming principles in Python.
-Similar to Java, variables and methods can be **encapsulated**, or made **private**. 
 
-Encapsulation is useful when storing sensitive persistent data within instances of objects.
-For example, a programmer may want to hold a user's password in a variable - however,
-in vanilla Python, the password variable can be manipulated by any external code in possession of the object instance. 
-Python++ prevents such behavior by introducing private variables and methods to Python.
 
 ## Installation
 The package is available on PyPI.
 You can install the package with the following command:
 ```shell
-pip install --upgrade --no-cache-dir pythonpp
+pip install pythonpp
 ```
 
 ## Usage
 
 ### Importing the Library
-
-**A Python++ class must extend `pythonpp`'s `ClsPP` class.**
-**The constructor must also call the `__init__` method of the parent `ClsPP` class.**
-
-When no ``__init__`` method is defined, `super().__init__()` will be executed automatically.
-
-
-Example:
+You can import Python++ with the following:
 ```python
 from pythonpp import *
-
-# class extends pythonpp's ClsPP class.
-class Test(ClsPP):
-    # class constructor
-    def __init__(self):
-        # call ClsPP's constructor.
-        super().__init__()
-    
-    def namespace(public, private):
-        # public: the public scope.
-        # private: the private scope.
-        pass
 ```
 
-Alternatively, you can create your class without using a wildcard import.
+### Class Declaration
+Declare Python++ classes with the `@PythonPP` decorator.
 
 ```python
-import pythonpp as ppp
+@PythonPP
+class MyClass:
+    pass # class code here
+``` 
 
-class Test(ppp.ClsPP):
-    def __init__(self):
-        super().__init__()
-        
+### Namespace and Scopes
+Declare variables and methods for Python++ classes within `namespace`.
+
+```python
+@PythonPP
+class MyClass:
     def namespace(public, private):
-        pass
+        pass # methods and variables here
 ```
 
-### Scopes and `namespace`
+Code within `namespace` has access to the following scopes:
+| Scope | Description |
+|:------|:------------|
+| `public` | The public instance scope. |
+| `private` | The private instance scope. |
+| `public.static` | The public static scope. |
+| `private.static` | The private static scope. |
 
-**All variable and method declarations must be done in the `namespace` method.**
+### Static Initializers
+Declare static initializers for Python++ classes using the `@staticinit` decorator.
+Static initializers do not have access to instance variables and methods.
+Static initializers cannot have input parameters.
 
- The namespace method has two parameters.
-
-| Parameter | Value |
-|:----------|:------|
-| `public`  | The public scope. All variables in this scope can be accessed externally.
-| `private` | The private scope. All variables in this scope can only be accessed internally. |
-
-You can define public and private variables using these scopes.
-
-**All variables and methods are declared private by default when the scope is not specified.**
-**When you create a variable or method, it is highly recommended that you declare it private unless *absolutely necessary*.**
-
-You can declare public and private variables by directly accessing the desired scope.
-
-Example:
 ```python
-class Test(ClsPP):
-    def __init__(self):
-        super().__init__()
-
+@PythonPP
+class MyClass:
     def namespace(public, private):
-        # public variable
-        public.hello = "hello"
-
-        # private variable
-        private.world = "world"
+        @staticinit
+        def StaticInit():
+            public.static.publicStaticVar = "Static variable (public)"
+            private.static.privateStaticVar = "Static variable (private)"
 ```
 
-You can declare public and private methods using the `@method(scope)` decorator.
+Alternatively, static variables can be declared in the bare `namespace` **if the variable assignments are constant**. Using bare static variable declarations are **not recommended**.
 
-Example:
+
+### Constructors
+Constructors can be declared using the `@constructor` decorator. Constructors can have input parameters.
+
 ```python
-class Test(ClsPP):
-    def __init__(self):
-        super().__init__()
-
+@PythonPP
+class MyClass:
     def namespace(public, private):
-        # public method
+        @constructor
+        def Constructor(someValue):
+            public.publicInstanceVar = "Instance variable (public)"
+            public.userDefinedValue = someValue
+```
+
+### Method Declarations
+Methods are declared using the `@method(scope)` decorator with the `public` and `private` scopes in `namespace`.
+
+```python
+@PythonPP
+class MyClass:
+    def namespace(public, private):
         @method(public)
         def publicMethod():
-            print("Called publicMethod")
-
-        # private method
-        @method(private)
-        def privateMethod():
-            print("Called privateMethod")
-```
-
-### External Access
-
-Public variables and methods can be accessed the same way as in vanilla Python. However, private variables and methods **cannot be accessed** externally.
-
-Example:
-```python
-from pythonpp import *
-
-class Test(ClsPP):
-    # class constructor
-    def __init__(self):
-        # Call ClsPP's constructor.
-        super().__init__()
-
-    # place all methods and field declarations here.
-    def namespace(public, private):
-        # public variable
-        public.hello = "hello"
-        # private variable
-        private.world = "world"
-
-        # public method
-        @method(public)
-        def publicMethod():
-            print("Called publicMethod")
+            pass # public instance method here
         
-        # private method
         @method(private)
         def privateMethod():
-            print("Called privateMethod")
+            pass # private instance method here
+        
+        @method(public.static)
+        def publicStaticMethod():
+            pass # public static method here
+        
+        @method(private.static)
+        def privateStaticMethod():
+            pass # private static method here
 ```
+
+### Special Methods
+Declare special built-in methods using the `@special` decorator.
 ```python
-test = Test()
-
-# works as normal
-print(test.hello)
-
-# also works as normal
-test.publicMethod()
-
-# results in an error
-print(test.world)
-
-# also results in an error
-test.privateMethod()
+@PythonPP
+class MyClass:
+    def namespace(public, private):
+        @special
+        def __str__():
+            return "Some string value"
 ```
 
 ### Inheritance
-
-All Python++ classes must extend the `ClsPP` class. You can also create Python++ classes that extend other classes using multiple inheritance.
-
-**For Python++ to work properly, you must call `ClsPP`'s constructor at some point in the `__init__` method.**
-
-Example:
+Classes can extend other classes using standard Python class inheritance.
 ```python
-# parent class
-class Parent():
-    # parent constructor
-    def __init__(self):
-        print("Parent constructor")
-
-# child class
-class Child(ClsPP, Parent):
-    # child constructor
-    def __init__(self):
-        print("Child constructor")
-        super(ClsPP, self).__init__()
-        super(Parent, self).__init__()
-
+@PythonPP
+class ParentClass:
     def namespace(public, private):
-        pass
+        @staticinit
+        def StaticInit():
+            public.static.staticVar = "Static variable"
+
+        @constructor
+        def Constructor(param):
+            print("Parent constructor")
+            public.param = param
+
+@PythonPP
+class ChildClass(ParentClass): # ChildClass extends ParentClass
+    def namespace(public, private):
+        @staticinit
+        def StaticInit():
+            ParentClass.staticinit() # Call parent static initializer
+            public.static.staticVar2 = "Static variable 2"
+
+        @constructor
+        def Constructor(param):
+            # Call parent constructor
+            ParentClass.constructor(param)
 ```
 
-Alternatively, you can call the superclass constructors like so:
-
+## Quickstart Example
 ```python
-# child class
-class Child(ClsPP, Parent):
-    # child constructor
-    def __init__(self):
-        # Same as super(ClsPP, self).__init__()
-        ClsPP.__init__(self)
-        # Same as super(Parent, self).__init__()
-        Parent.__init__(self)
+from pythonpp import *
 
+@PythonPP
+class ParentClass:
     def namespace(public, private):
-        pass
+        @staticinit
+        def StaticInit():
+            public.static.publicStaticVar = "Public static variable"
+            private.static.privateStaticVar = "Private static variable"
+
+        @constructor
+        def Constructor(parameter):
+            private.privateVariable = parameter
+
+@PythonPP
+class ChildClass(ParentClass):
+    def namespace(public, private):
+        @staticinit
+        def StaticInit():
+            ParentClass.staticinit()
+
+        @constructor
+        def Constructor(parameter):
+            ParentClass.constructor(parameter)
+            public.publicVariable = "Public variable"
+            private.privateVariable = "Private variable"
+        
+        @method(public)
+        def getPrivateVariable():
+            return private.privateVariable
+        
+        @method(public.static)
+        def getPrivateStaticVar():
+            return private.static.privateStaticVar
+
+        @special
+        def __str__():
+            return "ChildClass object"
+```
+```python
+print(ChildClass.publicStaticVar)
+# > Private static variable
+print(ChildClass.getPrivateStaticVar())
+# > Private static variable
+
+obj = ChildClass("Parameter value")
+print(obj)
+# > ChildClass object
+print(obj.publicVariable)
+# > Public variable
+print(obj.getPrivateVariable())
+# > Parameter value
+try:
+    obj.privateVariable # results in an error
+except Exception as e:
+    print(e)
+# > 'ChildClass' object has no attribute 'privateVariable'
 ```
 
 ## Full Example
-You can view the full Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
-
-## Contributors
-
-[Ronak Badhe](https://github.com/r2dev2bb8)
-/
-[Kento Nishi](https://github.com/KentoNishi)
+You can view the full example Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
