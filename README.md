@@ -15,6 +15,65 @@ You can install the package with the following command:
 pip install pythonpp
 ```
 
+## Quickstart Example
+```python
+@PythonPP
+class ParentClass:
+    def namespace(public, private):
+        @staticinit
+        def StaticInit():
+            public.static.publicStaticVar = "Public static variable"
+            private.static.privateStaticVar = "Private static variable"
+
+        @constructor
+        def Constructor(parameter):
+            private.privateVariable = parameter
+
+@PythonPP
+class ChildClass(ParentClass):
+    def namespace(public, private):
+        @staticinit
+        def StaticInit():
+            ParentClass.staticinit()
+
+        @constructor
+        def Constructor(parameter):
+            ParentClass.constructor(parameter)
+            public.publicVariable = "Public variable"
+            private.privateVariable = "Private variable"
+        
+        @method(public)
+        def getPrivateVariable():
+            return private.privateVariable
+        
+        @method(public.static)
+        def getPrivateStaticVar():
+            return private.static.privateStaticVar
+
+        @special
+        def __str__():
+            return "ChildClass object"
+```
+```python
+print(ChildClass.publicStaticVar)
+# > Private static variable
+print(ChildClass.getPrivateStaticVar())
+# > Private static variable
+
+obj = ChildClass("Parameter value")
+print(obj)
+# > ChildClass object
+print(obj.publicVariable)
+# > Public variable
+print(obj.getPrivateVariable())
+# > Parameter value
+try:
+    obj.privateVariable # results in an error
+except Exception as e:
+    print(e)
+# > 'ChildClass' object has no attribute 'privateVariable'
+```
+
 ## Usage
 
 ### Class Declaration
