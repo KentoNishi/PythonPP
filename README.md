@@ -2,8 +2,11 @@
 A robust Java-style OOP system for Python, with support for statics, encapsulation, and inheritance.
 
 [View on PyPI](https://pypi.org/project/pythonpp/)
-
-PythonPP stands for ***Python** **P**lus **P**lus*.
+/
+Built by
+[Kento Nishi](https://github.com/KentoNishi)
+and
+[Ronak Badhe](https://github.com/r2dev2bb8)
 
 Python++ allows Python programmers to use object oriented programming principles in Python.
 
@@ -15,66 +18,13 @@ You can install the package with the following command:
 pip install pythonpp
 ```
 
-## Quickstart Example
-```python
-@PythonPP
-class ParentClass:
-    def namespace(public, private):
-        @staticinit
-        def StaticInit():
-            public.static.publicStaticVar = "Public static variable"
-            private.static.privateStaticVar = "Private static variable"
-
-        @constructor
-        def Constructor(parameter):
-            private.privateVariable = parameter
-
-@PythonPP
-class ChildClass(ParentClass):
-    def namespace(public, private):
-        @staticinit
-        def StaticInit():
-            ParentClass.staticinit()
-
-        @constructor
-        def Constructor(parameter):
-            ParentClass.constructor(parameter)
-            public.publicVariable = "Public variable"
-            private.privateVariable = "Private variable"
-        
-        @method(public)
-        def getPrivateVariable():
-            return private.privateVariable
-        
-        @method(public.static)
-        def getPrivateStaticVar():
-            return private.static.privateStaticVar
-
-        @special
-        def __str__():
-            return "ChildClass object"
-```
-```python
-print(ChildClass.publicStaticVar)
-# > Private static variable
-print(ChildClass.getPrivateStaticVar())
-# > Private static variable
-
-obj = ChildClass("Parameter value")
-print(obj)
-# > ChildClass object
-print(obj.publicVariable)
-# > Public variable
-print(obj.getPrivateVariable())
-# > Parameter value
-try:
-    obj.privateVariable # results in an error
-except Exception as e:
-    print(e)
-# > 'ChildClass' object has no attribute 'privateVariable'
-```
-
 ## Usage
+
+### Importing the Library
+You can import Python++ with the following:
+```python
+from pythonpp import *
+```
 
 ### Class Declaration
 Declare Python++ classes with the `@PythonPP` decorator.
@@ -195,11 +145,66 @@ class ChildClass(ParentClass): # ChildClass extends ParentClass
             ParentClass.constructor(param)
 ```
 
+## Quickstart Example
+```python
+from pythonpp import *
+
+@PythonPP
+class ParentClass:
+    def namespace(public, private):
+        @staticinit
+        def StaticInit():
+            public.static.publicStaticVar = "Public static variable"
+            private.static.privateStaticVar = "Private static variable"
+
+        @constructor
+        def Constructor(parameter):
+            private.privateVariable = parameter
+
+@PythonPP
+class ChildClass(ParentClass):
+    def namespace(public, private):
+        @staticinit
+        def StaticInit():
+            ParentClass.staticinit()
+
+        @constructor
+        def Constructor(parameter):
+            ParentClass.constructor(parameter)
+            public.publicVariable = "Public variable"
+            private.privateVariable = "Private variable"
+        
+        @method(public)
+        def getPrivateVariable():
+            return private.privateVariable
+        
+        @method(public.static)
+        def getPrivateStaticVar():
+            return private.static.privateStaticVar
+
+        @special
+        def __str__():
+            return "ChildClass object"
+```
+```python
+print(ChildClass.publicStaticVar)
+# > Private static variable
+print(ChildClass.getPrivateStaticVar())
+# > Private static variable
+
+obj = ChildClass("Parameter value")
+print(obj)
+# > ChildClass object
+print(obj.publicVariable)
+# > Public variable
+print(obj.getPrivateVariable())
+# > Parameter value
+try:
+    obj.privateVariable # results in an error
+except Exception as e:
+    print(e)
+# > 'ChildClass' object has no attribute 'privateVariable'
+```
+
 ## Full Example
-You can view the full Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
-
-## Contributors
-
-[Kento Nishi](https://github.com/KentoNishi)
-/
-[Ronak Badhe](https://github.com/r2dev2bb8)
+You can view the full example Jupyter notebook [here](https://github.com/r2dev2bb8/PythonPP/blob/master/examples/example.ipynb).
