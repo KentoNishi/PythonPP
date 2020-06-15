@@ -1,4 +1,8 @@
 # Python++
+
+![PyPI Deployment](https://github.com/KentoNishi/PythonPP/workflows/PyPI%20Deployment/badge.svg)
+![Unit Tests](https://github.com/KentoNishi/PythonPP/workflows/Unit%20Tests/badge.svg)
+
 A robust Java-style OOP system for Python, with support for statics, encapsulation, and inheritance.
 
 [View on PyPI](https://pypi.org/project/pythonpp/)
