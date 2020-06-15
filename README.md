@@ -27,7 +27,7 @@ class MyClass:
 ``` 
 
 ### Namespace and Scopes
-Declare variables and methods for Python++ classes within `namespace(public, private)`.
+Declare variables and methods for Python++ classes within `namespace`.
 
 ```python
 @PythonPP
@@ -35,6 +35,14 @@ class MyClass:
     def namespace(public, private):
         pass # methods and variables here
 ```
+
+Code within `namespace` has access to the following scopes:
+| Scope | Description |
+|:------|:------------|
+| `public` | The public instance scope. |
+| `private` | The private instance scope. |
+| `public.static` | The public static scope. |
+| `private.static` | The private static scope. |
 
 ### Static Initializers
 Declare static initializers for Python++ classes using the `@staticinit` decorator.
