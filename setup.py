@@ -13,12 +13,12 @@ del sys.argv[1]
 setuptools.setup(
     name="pythonpp",
     version=versionName,
-    author="Ronak Badhe, Kento Nishi",
-    author_email="ronak.badhe@gmail.com, kento24gs@outlook.com",
+    author="Kento Nishi, Ronak Badhe",
+    author_email="kento24gs@outlook.com, ronak.badhe@gmail.com",
     description=long_description.split("\n")[1],
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url="https://github.com/r2dev2bb8/PythonPP",
+    url="https://github.com/KentoNishi/PythonPP",
     packages=setuptools.find_packages(),
     classifiers=[
         "Programming Language :: Python :: 3",
