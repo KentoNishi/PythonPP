@@ -95,12 +95,15 @@ class MyClass:
         @method(public)
         def publicMethod():
             pass # public instance method here
+        
         @method(private)
         def privateMethod():
             pass # private instance method here
+        
         @method(public.static)
         def publicStaticMethod():
             pass # public static method here
+        
         @method(private.static)
         def privateStaticMethod():
             pass # private static method here
