@@ -21,7 +21,7 @@ def __parametrized(dec):
 __empty = lambda *args, **kwargs: None
 
 __customConstructor = __empty
-__customInitializer = __empty
+__customStaticinit = __empty
 __publicScope = None
 __privateScope = None
 __bottomLevel = None
@@ -37,6 +37,7 @@ __BLACKLIST = {
     "private",
     "method",
     "special",
+    "staticinit",
 }
 
 # @__parametrized
@@ -60,11 +61,17 @@ def constructor(func):
     __customConstructor = func
 
 
-def initializer(func):
+def staticinit(func):
     global __namespacing, __staticNamespacing
 
     if __staticNamespacing:
-        __namespacing.initializer = func
+        if func.__name__ != __namespacing.__name__:
+            raise AttributeError(
+                'The static initializer for "{clsname}" must match the class name.'.format(
+                    clsname=__namespacing.__name__
+                )
+            )
+        __namespacing.staticinit = func
 
 
 def __is_special(name):
@@ -268,25 +275,25 @@ def PythonPP(cls):
                 del base.constructor
 
     cls.__init__ = __init__
-    cls.initializer = __empty
+    cls.staticinit = __empty
 
     __staticNamespacing = True
     for base in cls.__bases__:
         if hasattr(base, "namespace"):
-            base.initializer = __empty
+            base.staticinit = __empty
     recursivelyInitNamespace(
         Scope(None, static_public_scope), Scope(None, static_private_scope),
     )
-    cls.initializer()
+    cls.staticinit()
     __staticNamespacing = False
 
-    def recursivelyClearInitializers(theClass):
-        if hasattr(theClass, "initializer"):
-            del theClass.initializer
+    def recursivelyClearStaticinits(theClass):
+        if hasattr(theClass, "staticinit"):
+            del theClass.staticinit
         for base in theClass.__bases__:
-            recursivelyClearInitializers(base)
+            recursivelyClearStaticinits(base)
 
-    recursivelyClearInitializers(cls)
+    recursivelyClearStaticinits(cls)
 
     return cls
 
