@@ -21,6 +21,7 @@ def __parametrized(dec):
 __empty = lambda *args, **kwargs: None
 
 __customConstructor = __empty
+__customInitializer = __empty
 __publicScope = None
 __privateScope = None
 __bottomLevel = None
@@ -57,6 +58,13 @@ def constructor(func):
     """
     global __customConstructor
     __customConstructor = func
+
+
+def initializer(func):
+    global __namespacing, __staticNamespacing
+
+    if __staticNamespacing:
+        __namespacing.initializer = func
 
 
 def __is_special(name):
@@ -260,12 +268,25 @@ def PythonPP(cls):
                 del base.constructor
 
     cls.__init__ = __init__
+    cls.initializer = __empty
 
     __staticNamespacing = True
+    for base in cls.__bases__:
+        if hasattr(base, "namespace"):
+            base.initializer = __empty
     recursivelyInitNamespace(
         Scope(None, static_public_scope), Scope(None, static_private_scope),
     )
+    cls.initializer()
     __staticNamespacing = False
+
+    def recursivelyClearInitializers(theClass):
+        if hasattr(theClass, "initializer"):
+            del theClass.initializer
+        for base in theClass.__bases__:
+            recursivelyClearInitializers(base)
+
+    recursivelyClearInitializers(cls)
 
     return cls
 
