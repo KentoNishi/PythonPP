@@ -3,23 +3,7 @@ import inspect
 import sys
 import types
 
-
-def __parametrized(dec):
-    """
-    Allows existence of function wrappers with arguments which can have functions with arguments.
-    """
-
-    def layer(*args, **kwargs):
-        def repl(f):
-            return dec(f, *args, **kwargs)
-
-        return repl
-
-    return layer
-
-
 __empty = lambda *args, **kwargs: None
-
 __customConstructor = __empty
 __customStaticinit = __empty
 __publicScope = None
@@ -30,31 +14,58 @@ __isStaticContainer = __empty
 __staticNamespacing = False
 __BLACKLIST = {
     "constructor",
+    "method",
+    "method",
     "namespace",
-    "method",
-    "static",
-    "public",
     "private",
-    "method",
+    "public",
     "special",
+    "static",
     "staticinit",
 }
 
-# @__parametrized
-# No parameterization when using one parameter
+
+def __parametrized(dec):
+    def layer(*args, **kwargs):
+        def repl(f):
+            return dec(f, *args, **kwargs)
+
+        return repl
+
+    return layer
+
+
+def __is_special(name):
+    return name.startswith("__") and name.endswith("__")
+
+
+def __copy_method(f):
+    try:
+        g = types.FunctionType(
+            f.__code__,
+            f.__globals__,
+            name=f.__name__,
+            argdefs=f.__defaults__,
+            closure=f.__closure__,
+        )
+        g = functools.update_wrapper(g, f)
+        g.__kwdefaults__ = f.__kwdefaults__
+    except AttributeError:
+        return __empty
+    return g
+
+
 def constructor(func):
     """
-    Constructor Wrapper for Python++ classes
-    The decorator does not take any arguments.
-    The scope is assumed to be a public instance method.
-
-    ### Example:
-    
-    ```python
-    @constructor
-    def __init__(variable1, variable2):
-        private.variable1 = variable1
-        private.static.variable2 = variable2
+    The constructor decorator for Python++ classes.
+    ### Example
+    ```
+    @PythonPP
+    class MyClass:
+        def namespace(public, private):
+            @constructor
+            def MyConstructor(parameter):
+                private.variable = parameter
     ```
     """
     global __customConstructor
@@ -62,23 +73,37 @@ def constructor(func):
 
 
 def staticinit(func):
+    """
+    The static initializer decorator for Python++ classes.
+    ### Example
+    ```
+    @PythonPP
+    class MyClass:
+        def namespace(public, private):
+            @staticinit
+            def MyStaticInit(parameter):
+                private.static.variable = parameter
+    ```
+    """
     global __namespacing, __staticNamespacing
 
     if __staticNamespacing:
-        if func.__name__ != __namespacing.__name__:
-            raise AttributeError(
-                'The static initializer for "{clsname}" must match the class name.'.format(
-                    clsname=__namespacing.__name__
-                )
-            )
         __namespacing.staticinit = func
 
 
-def __is_special(name):
-    return name.startswith("__") and name.endswith("__")
-
-
 def special(func):
+    """
+    The special method decorator for Python++ classes.
+    ### Example
+    ```
+    @PythonPP
+    class MyClass:
+        def namespace(public, private):
+            @special
+            def __str__():
+                return f"MyClass instance where private.variable = {private.variable}"
+    ```
+    """
 
     global __namespacing
 
@@ -101,37 +126,74 @@ def special(func):
     )
 
 
-def __copy_method(f):
+@__parametrized
+def method(func, scope):
     """
-    Creates a clone of a given method.
+    The method decorator for Python++ classes.
+
+    ### Example
+    ```
+    @PythonPP
+    class MyClass:
+        def namespace(public, private):
+            @method(public)
+            def publicMethod():
+                pass # public instance method here
+            @method(private)
+            def privateMethod():
+                pass # private instance method here
+            @method(public.static)
+            def publicStaticMethod():
+                pass # public static method here
+            @method(private.static)
+            def privateStaticMethod():
+                pass # private static method here
+    ```
+    
+    ### Parameters
+    `scope`: The method scope.
+    Either `public`, `private`, `public.static`, or `private.static`.
     """
-    try:
-        g = types.FunctionType(
-            f.__code__,
-            f.__globals__,
-            name=f.__name__,
-            argdefs=f.__defaults__,
-            closure=f.__closure__,
+    global __namespacing, __BLACKLIST
+    if func.__name__ in __BLACKLIST:
+        raise AttributeError(
+            'Methods cannot be named "{funcname}".'.format(funcname=func.__name__)
         )
-        g = functools.update_wrapper(g, f)
-        g.__kwdefaults__ = f.__kwdefaults__
-    except AttributeError:
-        return __empty
-    return g
+    elif func.__name__ == __namespacing.__qualname__:
+        raise AttributeError(
+            'The method name "{funcname}" is reserved for the constructor.'.format(
+                funcname=func.__name__
+            )
+        )
+    elif __is_special(func.__name__):
+        raise AttributeError(
+            (
+                'The method name "{funcname}" starts and ends with "__". '
+                + "Such method names are reserved for special methods created with @special."
+            ).format(funcname=func.__name__)
+        )
+    if not __isStaticContainer(scope):
+        try:
+            setattr(scope, func.__name__, func)
+        except AttributeError:
+            pass
+
+    def inner(*args, **kwargs):
+        return func(*args, **kwargs)
+
+    return inner
 
 
 def PythonPP(cls):
     """
-    The class wrapper to create Python++ objects.
-    Use this decorator on a class to declare it as a Python++ class.
+    The class decorator for Python++ classes.
 
-    ### Example:
-
-    ```python
+    ### Example
+    ```
     @PythonPP
-    class Test:
+    class MyClass:
         def namespace(public, private):
-            public.static.testVariable = "Hello World!"
+            pass # Methods and variables here
     ```
     """
     global __BLACKLIST, __staticNamespacing
@@ -252,14 +314,8 @@ def PythonPP(cls):
 
         if __customConstructor is __empty:
             pass
-        elif __customConstructor.__name__ == cls.__name__:
-            __customConstructor(*args, **kwargs)
         else:
-            raise AttributeError(
-                'The constructor for "{clsname}" must match the class name.'.format(
-                    clsname=cls.__name__
-                )
-            )
+            __customConstructor(*args, **kwargs)
 
         if cls == __bottomLevel:
             __publicScope = None
@@ -296,49 +352,3 @@ def PythonPP(cls):
     recursivelyClearStaticinits(cls)
 
     return cls
-
-
-@__parametrized
-def method(func, cls):
-    """
-    Used to expose methods to a particular scope
-
-    ### Example use case:
-
-    ```python
-    @method(public)
-    def publicmethod(*args, **kwargs):
-        for arg in args:
-            print(arg)
-    ```
-
-    :``param cls`` - the scope which the method is exposed to
-    """
-    global __namespacing, __BLACKLIST
-    if func.__name__ in __BLACKLIST:
-        raise AttributeError(
-            'Methods cannot be named "{funcname}".'.format(funcname=func.__name__)
-        )
-    elif func.__name__ == __namespacing.__qualname__:
-        raise AttributeError(
-            'The method name "{funcname}" is reserved for the constructor.'.format(
-                funcname=func.__name__
-            )
-        )
-    elif __is_special(func.__name__):
-        raise AttributeError(
-            (
-                'The method name "{funcname}" starts and ends with "__". '
-                + "Such method names are reserved for special methods created with @special."
-            ).format(funcname=func.__name__)
-        )
-    if not __isStaticContainer(cls):
-        try:
-            setattr(cls, func.__name__, func)
-        except AttributeError:
-            pass
-
-    def inner(*args, **kwargs):
-        return func(*args, **kwargs)
-
-    return inner
