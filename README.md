@@ -46,6 +46,7 @@ class MyClass:
 ```
 
 Code within `namespace` has access to the following scopes:
+
 | Scope | Description |
 |:------|:------------|
 | `public` | The public instance scope. |
