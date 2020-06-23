@@ -25,7 +25,7 @@ pip install pythonpp
 ## Usage
 
 ### Importing the Library
-You can import Python++ with the following:
+You can import Python++ using a wildcard import statement.
 ```python
 from pythonpp import *
 ```
